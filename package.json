@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "three": "^0.152.2",
+    "three-mesh-ui": "^6.5.4"
+  }
+}
