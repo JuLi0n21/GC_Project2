@@ -13,6 +13,8 @@ import ThreeMeshUI from 'three-mesh-ui'
 
 let camera, scene, renderer, loader, stats, statsMesh, raycaster, controls;
 
+let prevpos;
+
 let INTERSECTED;
 const tempMatrix = new THREE.Matrix4();
 let room;
@@ -60,7 +62,6 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputEncoding = THREE.sRGBEncoding;
     document.body.appendChild(renderer.domElement);
 
     window.addEventListener('resize', onWindowResize);
@@ -79,8 +80,32 @@ function handleController(controller) {
 
     checkforcollisions(controller);
     if (controller.userData.isSelecting) {
-
+        convert2postobox(prevpos,controller.position);
     }
+    else {
+        prevpos = controller.position;
+    }
+
+}
+
+function convert2postobox(point1, point2){
+    var midpoint = new THREE.Vector3().addVectors(point1, point2).multiplyScalar(0.5);
+    var distance = point1.distanceTo(point2);
+
+// Create a cube geometry
+var geometry = new THREE.BoxGeometry(distance, distance, distance);
+
+// Create a material
+var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
+// Create a mesh using the geometry and material
+var cube = new THREE.Mesh(geometry, material);
+
+cube.position.set(midpoint);
+
+scene.add(cube);
+
+return cube;
 
 }
 
