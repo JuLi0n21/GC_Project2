@@ -99,23 +99,18 @@ function init() {
         }
     }
 
-    // Function to handle selectend event
     function onSelectEnd(event) {
         this.userData.isSelecting = false;
         const controller = event.data;
         const buttonIndex = 0; // Index of the button you want to track
 
         if (!controller.gamepad.buttons[buttonIndex].pressed) {
-            // The button was released on this controller
-            // Save the position after the button release
             positionAfterRelease.copy(this.position);
 
-            // Perform any desired action with the recorded positions
             console.log('Position before button press:', positionBeforePress);
             console.log('Position after button release:', positionAfterRelease);
             room.add(convert2postobox(positionBeforePress, positionAfterRelease));
 
-            // Reset the positionAfterRelease to null
             positionAfterRelease = new THREE.Vector3();
         }
     }
