@@ -85,17 +85,16 @@ function init() {
     // Function to handle selectstart event
     function onSelectStart(event) {
 
-        console.log(event);
+        //console.log(event);
         this.userData.isSelecting = true;
         const controller = event.data;
         const buttonIndex = 0; // Index of the button you want to track
-
-        console.log(this);
 
         if (controller.gamepad.buttons[buttonIndex].pressed) {
             // The button was pressed on this controller
             // Save the position before the button press
             positionBeforePress.copy(this.position);
+            console.log(this.position)
         }
     }
 
@@ -155,7 +154,7 @@ function init() {
     controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
     scene.add(controllerGrip2);
 
-    scene.add(convert2postobox(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 2, 2)));
+    scene.add(convert2postobox(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1)));
     var point1 = new THREE.Vector3(1, 1, 1);
     var point2 = new THREE.Vector3(2, 2, 2);
 
@@ -170,6 +169,8 @@ function init() {
     var cube = new THREE.Mesh(geometry, material);
     cube.position.set(midpoint.x, midpoint.y, midpoint.z);
     room.add(cube);
+
+   
 
 
 }
@@ -220,7 +221,7 @@ function convert2postobox(point1, point2) {
 
     var geometry = new THREE.BoxGeometry(distance, distance, distance);
 
-    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    var material = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.BackSide });
 
     var cube = new THREE.Mesh(geometry, material);
 
@@ -235,7 +236,7 @@ function checkforcollisions(controller) {
     tempMatrix.identity().extractRotation(controller.matrixWorld);
 
     raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-    raycaster.ray.direction.set(0, 0, - 1).applyMatrix4(tempMatrix);
+    raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
     const intersects = raycaster.intersectObjects(room.children, false);
 
@@ -252,10 +253,10 @@ function checkforcollisions(controller) {
 
             var buttonIndex = 1; //second button
 
-            if(controller.data.gamepad.buttons[buttonIndex].pressed){
+         /*   if(controller.data.gamepad.buttons[buttonIndex].pressed){
                 room.remove(INTERSECTED);
             }
-
+        */
         }
 
     } else {
