@@ -250,6 +250,12 @@ function checkforcollisions(controller) {
             INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
             INTERSECTED.material.color.set(0xff0000);
 
+            var buttonIndex = 1; //second button
+
+            if(controller.data.gamepad.buttons[buttonIndex].pressed){
+                room.remove(INTERSECTED);
+            }
+
         }
 
     } else {
