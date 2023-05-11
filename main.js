@@ -235,11 +235,11 @@ function convert2postobox(point1, point2) {
 
 }
 
-function checkforcollisions() {
+function checkforcollisions(controller) {
 
-    tempMatrix.identity().extractRotation(controller1.matrixWorld);
+    tempMatrix.identity().extractRotation(controller.matrixWorld);
 
-    raycaster.ray.origin.setFromMatrixPosition(controller1.matrixWorld);
+    raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
     raycaster.ray.direction.set(0, 0, - 1).applyMatrix4(tempMatrix);
 
     const intersects = raycaster.intersectObjects(room.children, false);
