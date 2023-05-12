@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "three": "^0.152.2",
-    "three-mesh-ui": "^6.5.4"
+    "three-mesh-ui": "^6.5.4",
+    "vite": "^4.3.5"
   }
 }
