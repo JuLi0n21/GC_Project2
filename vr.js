@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import ThreeMeshUI from 'three-mesh-ui'
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { getRoom, getRenderer,getScene } from './main';
 
 
 let raycaster;
@@ -11,20 +12,16 @@ let controllerGrip1, controllerGrip2;
 let INTERSECTED;
 const tempMatrix = new THREE.Matrix4();
 
-
-
-function initXR(renderer, scene, room) {
-
-   
+export function initXR() {
 
     raycaster = new THREE.Raycaster();
 
-    renderer.xr.enabled = true;
-    document.body.appendChild(VRButton.createButton(renderer));
+    getRenderer().xr.enabled = true;
+    document.body.appendChild(VRButton.createButton(getRenderer()));
     // controllers
 
     
-    controller1 = renderer.xr.getController(0);
+    controller1 = getRenderer().xr.getController(0);
     controller1.addEventListener('selectstart', onSelectStart);
     controller1.addEventListener('selectend', onSelectEnd);
     controller1.addEventListener('connected', function (event) {
@@ -37,9 +34,9 @@ function initXR(renderer, scene, room) {
         this.remove(this.children[0]);
 
     });
-    scene.add(controller1);
+    getScene().add(controller1);
 
-    controller2 = renderer.xr.getController(1);
+    controller2 = getRenderer().xr.getController(1);
     controller2.addEventListener('selectstart', onSelectStart);
     controller2.addEventListener('selectend', onSelectEnd);
     controller2.addEventListener('connected', function (event) {
@@ -52,17 +49,17 @@ function initXR(renderer, scene, room) {
         this.remove(this.children[0]);
 
     });
-    scene.add(controller2);
+    getScene().add(controller2);
 
     const controllerModelFactory = new XRControllerModelFactory();
 
-    controllerGrip1 = renderer.xr.getControllerGrip(0);
+    controllerGrip1 = getRenderer().xr.getControllerGrip(0);
     controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-    scene.add(controllerGrip1);
+    getScene().add(controllerGrip1);
 
-    controllerGrip2 = renderer.xr.getControllerGrip(1);
+    controllerGrip2 = getRenderer().xr.getControllerGrip(1);
     controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-    scene.add(controllerGrip2);
+    getScene().add(controllerGrip2);
     
 
     let positionAfterRelease = new THREE.Vector3();
@@ -94,7 +91,8 @@ function initXR(renderer, scene, room) {
             console.log('Position before button press:', positionBeforePress);
             console.log('Position after button release:', positionAfterRelease);
             //room.add(convert2postobox(positionBeforePress, positionAfterRelease));
-
+            getRoom().add((convert2postobox(positionBeforePress, positionAfterRelease)));
+            
             positionAfterRelease = new THREE.Vector3();
         }
     }
@@ -127,23 +125,23 @@ function buildController(data) {
 
 }
 
-function handleControllers(room) {
+export function handleControllers() {
 
-       checkforcollisions(controller1, room);
-       checkforcollisions(controller2, room);
+       checkforcollisions(controller1);
+       checkforcollisions(controller2);
 
 
 }
 
 
-function checkforcollisions(controller, room) {
+function checkforcollisions(controller) {
 
     tempMatrix.identity().extractRotation(controller.matrixWorld);
 
     raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
 
-    const intersects = raycaster.intersectObjects(room.children, false);
+    const intersects = raycaster.intersectObjects(getRoom().children, false);
 
     if (intersects.length > 0) {
 
@@ -186,10 +184,8 @@ function convert2postobox(point1, point2) {
 
     var cube = new THREE.Mesh(geometry, material);
 
-    cube.position.set(midpoint.x, midpoint.y, midpoint.z);
-    room.add(cube);
+    cube.position.copy(midpoint);
+    getRoom().add(cube);
     return cube;
 
 }
-
-export { handleControllers, initXR }

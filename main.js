@@ -91,7 +91,17 @@ const canvas = document.getElementById('canvas');
    */
 }
 
+export function getRoom(){
+    return room;
+}
 
+export function getRenderer(){
+    return renderer;
+}
+
+export function getScene(){
+    return scene;
+}
 function onWindowResize() {
 
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -120,4 +130,3 @@ function render() {
 
 }
 
-export { scene, renderer}
