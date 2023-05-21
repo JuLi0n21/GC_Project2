@@ -87,36 +87,138 @@ function init() {
 
 
   vrControl = VRControl(renderer, camera, scene);
-  for (let i = 0; i < 2; i++) {
+  
 
+//handle controller 1
 
-    scene.add(vrControl.controllerGrips[i], vrControl.controllers[i]);
+  scene.add(vrControl.controllerGrips[0], vrControl.controllers[0]);
 
-    vrControl.controllers[i].addEventListener('selectstart', (event) => {
+  vrControl.controllers[0].addEventListener('selectstart', (event) => {
 
+    vrControl.controllers[0].userData.selected = true;
 
-      const controller = event.data;
-      const buttonIndex = 0;
+  });
+  vrControl.controllers[0].addEventListener('selectend', (event) => {
 
-      if (controller.gamepad.buttons[buttonIndex].pressed) {
-        positionBeforePress.copy(vrControl.controllers[i].position);
+    vrControl.controllers[0].userData.selected = false;
+  });  
+  
+
+  //handle controller 2
+  scene.add(vrControl.controllerGrips[1], vrControl.controllers[1]);
+
+  window.addEventListener('gamepadbuttonchange', (event) => {
+    console.log("gamepafhcanged");
+  });
+  vrControl.controllers[0].addEventListener('input', (event) => {
+    console.log(event);
+  });
+  vrControl.controllers[0].addEventListener('select', (event) => {
+    console.log(event);
+  });
+  vrControl.controllers[0].addEventListener('squeeze', (event) => {
+    console.log(event);
+  });
+  vrControl.controllers[0].addEventListener('triggerstart', (event) => {
+    console.log(event);
+  });
+  vrControl.controllers[0].addEventListener('squeezestart', (event) => {
+    console.log(event);
+    const controller = event.target;
+    console.log(event.data.gamepad.buttons);
+    // Get the button index and state
+    const buttonIndex = event.data.gamepad.buttons;
+    const buttonState = event.data.state;
+
+    // Switch case based on button index
+    switch (buttonIndex) {
+      case 0: // Primary button (e.g., trigger)
+        if (buttonState === "pressed") {
+          console.log("button 0 pressed");
+
+        } else if (buttonState === "released") {
+          console.log("button 0 relasesed");
+        }
+        break;
+        case 1: // Primary button (e.g., trigger)
+        if (buttonState === "pressed") {
+          console.log("button 1 pressed");
+
+        } else if (buttonState === "released") {
+          console.log("button 1 relasesed");
+        }
+        break;
+        case 2: // Primary button (e.g., trigger)
+        if (buttonState === "pressed") {
+          console.log("button 2 pressed");
+
+        } else if (buttonState === "released") {
+          console.log("button 2 relasesed");
+        }
+        break;
+        case 3: // Primary button (e.g., trigger)
+        if (buttonState === "pressed") {
+          console.log("button 3 pressed");
+
+        } else if (buttonState === "released") {
+          console.log("button 3 relasesed");
+        }
+        break;
+        case 4: // Primary button (e.g., trigger)
+        if (buttonState === "pressed") {
+          console.log("button 4 pressed");
+
+        } else if (buttonState === "released") {
+          console.log("button 4 relasesed");
+        }
+        break;
+        default:
+          // Ignore unrecognized button index
+          break;
       }
-      vrControl.controllers[i].userData.selected = true;
+  });
 
-    });
-    vrControl.controllers[i].addEventListener('selectend', (event) => {
+  vrControl.controllers[1].addEventListener('selectstart', (event) => {
 
-      const controller = event.data;
-      const buttonIndex = 0;
 
-      if (!controller.gamepad.buttons[buttonIndex].pressed) {
-        positionAfterRelease.copy(vrControl.controllers[i].position);
+    const controller = event.data;
+    const buttonIndex = 0;
 
-        Convert2postobox(positionBeforePress, positionAfterRelease);
-      }
-      vrControl.controllers[i].userData.selected = false;
-    });
-  }
+    if (controller.gamepad.buttons[0].pressed) {
+      console.log("button 0");
+      positionBeforePress.copy(vrControl.controllers[1].position);
+    }
+    if (controller.gamepad.buttons[1].pressed) {
+      console.log("button 1");
+      room.remove(getIntersections(vrControl.controllers[1]))
+    }
+    if (controller.gamepad.buttons[2].pressed) {
+      console.log("button 2");
+    }
+    if (controller.gamepad.buttons[3].pressed) {
+      console.log("button 3");
+    }
+    if (controller.gamepad.buttons[4].pressed) {
+      console.log("button 4");
+    }
+
+
+    vrControl.controllers[1].userData.selected = true;
+
+  });
+  vrControl.controllers[1].addEventListener('selectend', (event) => {
+
+    const controller = event.data;
+    const buttonIndex = 0;
+
+    if (!controller.gamepad.buttons[buttonIndex].pressed) {
+      positionAfterRelease.copy(vrControl.controllers[1].position);
+
+      Convert2postobox(positionBeforePress, positionAfterRelease);
+    }
+    vrControl.controllers[1].userData.selected = false;
+  });
+  
 
 
   window.addEventListener('resize', onWindowResize);
@@ -140,12 +242,8 @@ function onWindowResize() {
 
 
 function intersectObjects(controller) {
-//console.log(controller.userData)
-  // Do not highlight in mobile-ar
 
   if (controller.userData.targetRayMode === 'screen') return;
-
-  // Do not highlight when already selected
 
   if (controller.userData.selected !== undefined) return;
 
@@ -153,7 +251,6 @@ function intersectObjects(controller) {
 
   const intersections = getIntersections(controller);
 
-  //console.log(intersections)
   if (intersections.length > 0) {
 
     const intersection = intersections[0];
