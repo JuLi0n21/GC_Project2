@@ -246,10 +246,11 @@ export function updateButtons(renderer,vrControl,controllerID) {
 
 	if ( intersect && intersect.object.isUI ) {
 
-		if ( selectState ) {
+		if ( vrControl.controllers[controllerID].userData.selected ) {
 
 			// Component.setState internally call component.set with the options you defined in component.setupState
 			intersect.object.setState( 'selected' );
+            vrControl.controllers[controllerID].userData.selected = false;
 
 		} else {
 
