@@ -143,7 +143,7 @@ function init() {
 
   vrControl.controllers[1].addEventListener("squeeze", (event) => {
     const obj = getIntersections(vrControl.controllers[1]);
-    if (!obj[0].object) {
+    if (obj[0]!= null) {
       group.remove(obj[0].object);
     }
   });
@@ -159,25 +159,23 @@ function init() {
 }
 
 function UpdateVrControl(controller) {
-  console.log(controller);
-  if (controller.gamepad.buttons[0].pressed) {
-    console.log("button 0");
-    // positionBeforePress.copy(vrControl.controllers[1].position);
-  }
-  if (controller.gamepad.buttons[1].pressed) {
-    console.log("button 1");
-    // cleanIntersected();
-    // group.remove(getIntersections(vrControl.controllers[1]))
-  }
-  if (controller.gamepad.buttons[2].pressed) {
-    console.log("button 2");
-  }
-  if (controller.gamepad.buttons[3].pressed) {
-    console.log("button 3");
-  }
-  if (controller.gamepad.buttons[4].pressed) {
-    console.log("button 4");
-  }
+   if(controller.gamepad){
+     if (controller.gamepad.buttons[0].pressed) {
+       console.log("button 0");
+     }
+     if (controller.gamepad.buttons[1].pressed) {
+       console.log("button 1");
+     }
+     if (controller.gamepad.buttons[2].pressed) {
+       console.log("button 2");
+     }
+     if (controller.gamepad.buttons[3].pressed) {
+       console.log("button 3");
+     }
+     if (controller.gamepad.buttons[4].pressed) {
+       console.log("button 4");
+     }
+   }
 }
 
 function onWindowResize() {
@@ -249,14 +247,12 @@ function Convert2postobox(startingPoint, endPoint) {
   });
 
   const object = new THREE.Mesh(geometry, material);
-
-  object.scale.setScalar(Math.random() + 0.5);
-
   object.castShadow = true;
   object.receiveShadow = true;
 
   //group.add(object);
 
+ // midpoint.position.y = 0;
   object.position.copy(midpoint);
   group.attach(object);
 }
@@ -273,6 +269,7 @@ function render() {
   updateButtons(renderer, vrControl, 1);
   intersectObjects(vrControl.controllers[0]);
   intersectObjects(vrControl.controllers[1]);
+ // UpdateVrControl(vrControl.controllers[1])
 
   renderer.render(scene, camera);
 

@@ -171,21 +171,17 @@ export function drawgui(scene) {
     
         buttonNext.add(
             new ThreeMeshUI.Text( { content: 'next' } )
-        );
-    
+        );  
         buttonPrevious.add(
             new ThreeMeshUI.Text( { content: 'previous' } )
-        );
-    
+        );   
         // Create states for the buttons.
         // In the loop, we will call component.setState( 'state-name' ) when mouse hover or click
-    
         const selectedAttributes = {
             offset: 0.02,
             backgroundColor: new THREE.Color( 0x777777 ),
             fontColor: new THREE.Color( 0x222222 )
         };
-    
         buttonNext.setupState( {
             state: 'selected',
             attributes: selectedAttributes,
@@ -198,9 +194,7 @@ export function drawgui(scene) {
         } );
         buttonNext.setupState( hoveredStateAttributes );
         buttonNext.setupState( idleStateAttributes );
-    
         //
-    
         buttonPrevious.setupState( {
             state: 'selected',
             attributes: selectedAttributes,
@@ -214,9 +208,7 @@ export function drawgui(scene) {
         } );
         buttonPrevious.setupState( hoveredStateAttributes );
         buttonPrevious.setupState( idleStateAttributes );
-    
         //
-    
         container.add( buttonNext, buttonPrevious );
         objsToTest.push( buttonNext, buttonPrevious );
     
@@ -226,74 +218,43 @@ export function drawgui(scene) {
 }
 
 export function updateButtons(renderer,vrControl,controllerID) {
-
 	// Find closest intersecting object
-
 	let intersect;
-
 	if ( renderer.xr.isPresenting ) {
-
 		vrControl.setFromController( controllerID, raycaster.ray );
-
 		intersect = raycast();
-
 		// Position the little white dot at the end of the controller pointing ray
 		if ( intersect ) vrControl.setPointerAt( controllerID, intersect.point );
-
 	} 
-
 	// Update targeted button state (if any)
-
 	if ( intersect && intersect.object.isUI ) {
-
 		if ( vrControl.controllers[controllerID].userData.selected ) {
-
 			// Component.setState internally call component.set with the options you defined in component.setupState
 			intersect.object.setState( 'selected' );
             vrControl.controllers[controllerID].userData.selected = false;
-
 		} else {
-
 			// Component.setState internally call component.set with the options you defined in component.setupState
 			intersect.object.setState( 'hovered' );
-
 		}
-
 	}
-
 	// Update non-targeted buttons state
-
 	objsToTest.forEach( ( obj ) => {
-
 		if ( ( !intersect || obj !== intersect.object ) && obj.isUI ) {
-
 			// Component.setState internally call component.set with the options you defined in component.setupState
 			obj.setState( 'idle' );
-
 		}
-
 	} );
-
 }
 
 function raycast() {
-
 	return objsToTest.reduce( ( closestIntersection, obj ) => {
-
 		const intersection = raycaster.intersectObject( obj, true );
-
 		if ( !intersection[ 0 ] ) return closestIntersection;
-
 		if ( !closestIntersection || intersection[ 0 ].distance < closestIntersection.distance ) {
-
 			intersection[ 0 ].object = obj;
-
 			return intersection[ 0 ];
-
 		}
-
 		return closestIntersection;
-
 	}, null );
 
 }
