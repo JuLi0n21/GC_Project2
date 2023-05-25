@@ -12,6 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import ThreeMeshUI from "three-mesh-ui";
 import { drawgui, updateButtons } from "./threegui";
 import VRControl from "./utils/VRControl.js";
+import { RRT } from "./rrt";
 
 let camera, scene, renderer, loader, stats, statsMesh, raycaster, controls;
 
@@ -156,6 +157,55 @@ function init() {
   window.addEventListener("resize", onWindowResize);
 
   drawgui(scene);
+
+  const start = [0,0];
+  const goal = [6, 4];
+  const maxStepSize = 0.1;
+  const range = 10;
+
+  const rrt = new RRT(start, goal, group, maxStepSize, range);
+  const path = rrt.findPath();
+  
+    // Create material for the tree edges
+    const treeMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+  
+    // Traverse the tree and render the edges
+    rrt.tree.traverseDFS(rrt.tree.root, (node) => {
+      for (const child of node.children) {
+        const edgeGeometry = new THREE.BufferGeometry();
+        const edgePoints = [
+          new THREE.Vector3(node.value[0], node.value[1], 0),
+          new THREE.Vector3(child.value[0], child.value[1], 0),
+        ];
+        edgeGeometry.setFromPoints(edgePoints);
+        const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
+        scene.add(edgeLine);
+      }
+    });
+  
+    // Create geometry and material for the start point
+    const startGeometry = new THREE.CircleGeometry(0.1, 32);
+    const startMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+  
+    // Create a mesh for the start point
+    const startMesh = new THREE.Mesh(startGeometry, startMaterial);
+    startMesh.position.set(start[0], start[1], 0);
+  
+    // Add the start mesh to the scene
+    scene.add(startMesh);
+  
+    // Create geometry and material for the end point
+    const endGeometry = new THREE.CircleGeometry(0.1, 32);
+    const endMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff,  side: THREE.DoubleSide });
+  
+    // Create a mesh for the end point
+    const endMesh = new THREE.Mesh(endGeometry, endMaterial);
+    endMesh.position.set(goal[0], goal[1], 0);
+  
+    // Add the end mesh to the scene
+    scene.add(endMesh);
+  
+  
 }
 
 function UpdateVrControl(controller) {
