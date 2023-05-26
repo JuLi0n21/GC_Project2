@@ -85,15 +85,6 @@ function init() {
   camera.position.set(0, 1.6, 0);
   controls.target = new THREE.Vector3(0, 1, 0);
 
-  // controllers
-
-  obsticals = new THREE.Group();
- // scene.add(obsticals);
-
-  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0xf5f5f5, side: THREE.DoubleSide }))
-  //obst.rotateX(Math.PI / 2)
-  obst.position.set(2,2,0)
-  obsticals.add(obst)
 
   let positionBeforePress = new THREE.Vector3();
 
@@ -163,9 +154,16 @@ function init() {
 
   drawgui(scene);
 
-  const start = [1,1];
+
+  obsticals = new THREE.Group();
+
+  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst.position.set(2,2,0)
+  obsticals.add(obst)
+
+  const start = [1, 1];
   const goal = [5, 5];
-  const maxStepSize = 0.5;
+  const maxStepSize = 0.2;
   const maxStepCount = 10000;
   const range = 5;
   const rrtcanvas = new THREE.Group();
