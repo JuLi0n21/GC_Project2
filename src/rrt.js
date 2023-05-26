@@ -60,15 +60,9 @@ export class RRT {
   }
 
   isCollisionFree(point) {
-    // Check if the point is in collision with any obstacles
-    // You can define your own collision detection logic here
-    // For simplicity, let's assume there are no obstacles in this example
-    //console.log(this.obstacles)
-    //console.log(this.obstacles);
+    // add raycast to check if line is going thourgh it !IMPORTANT
     var returnvalue = true;
     if(!this.obstacles.children) {returnvalue =  true}
-     //console.log(obj.position.distanceTo(new THREE.Vector3(point[1], point[0], 0)));
-      
     this.obstacles.children.forEach(obj => {
      if(obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < this.maxStepSize){
      console.log(point)
@@ -119,11 +113,14 @@ export class RRT {
 
   visulize(){
 
+    //ADD A visulisation from the goal node to the root node
+    //ALSO add line from last node to goal
+    //think about turning this into 3d
+    //make a RRT* (path optimization)
     this.findPath();
     // Create material for the tree edges
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
   
-    // Traverse the tree and render the edges
     this.tree.traverseDFS(this.tree.root, (node) => {
       for (const child of node.children) {
         const edgeGeometry = new THREE.BufferGeometry();
