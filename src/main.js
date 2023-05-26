@@ -26,7 +26,7 @@ let gamepad;
 let gamepadAxes;
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
-let group, vrControl;
+let obsticals, vrControl;
 
 const clock = new THREE.Clock();
 
@@ -87,9 +87,13 @@ function init() {
 
   // controllers
 
-  group = new THREE.Group();
-  scene.add(group);
+  obsticals = new THREE.Group();
+ // scene.add(obsticals);
 
+  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0xf5f5f5, side: THREE.DoubleSide }))
+  //obst.rotateX(Math.PI / 2)
+  obst.position.set(0.5,0,0)
+  obsticals.add(obst)
   let positionBeforePress = new THREE.Vector3();
 
   vrControl = VRControl(renderer);
@@ -145,7 +149,7 @@ function init() {
   vrControl.controllers[1].addEventListener("squeeze", (event) => {
     const obj = getIntersections(vrControl.controllers[1]);
     if (obj[0]!= null) {
-      group.remove(obj[0].object);
+      obsticals.remove(obj[0].object);
     }
   });
   vrControl.controllers[1].addEventListener("squeezeend", (event) => {});
@@ -158,13 +162,21 @@ function init() {
 
   drawgui(scene);
 
-  const start = [0,0];
-  const goal = [6, 4];
-  const maxStepSize = 0.1;
-  const range = 10;
+  const start = [1,1];
+  const goal = [1.5, 1];
+  const maxStepSize = 0.2;
+  const maxStepCount = 10000;
+  const range = 2;
+  const rrtcanvas = new THREE.Group();
 
-  const rrt = new RRT(start, goal, group, maxStepSize, range);
-  const path = rrt.findPath();
+  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+  
+  new Worker(rrt.findPath())
+  
+
+
+   scene.add(rrtcanvas);
+   rrtcanvas.add(obsticals)
   
     // Create material for the tree edges
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
@@ -179,31 +191,24 @@ function init() {
         ];
         edgeGeometry.setFromPoints(edgePoints);
         const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
-        scene.add(edgeLine);
+        rrtcanvas.add(edgeLine);
       }
     });
-  
+  rrtcanvas.position.set(-1,0.5,-1);
+  rrtcanvas.rotateX(Math.PI / 2)
+
     // Create geometry and material for the start point
-    const startGeometry = new THREE.CircleGeometry(0.1, 32);
+    const startGeometry = new THREE.CircleGeometry(maxStepSize, 32);
     const startMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-  
-    // Create a mesh for the start point
     const startMesh = new THREE.Mesh(startGeometry, startMaterial);
     startMesh.position.set(start[0], start[1], 0);
+    rrtcanvas.add(startMesh);
   
-    // Add the start mesh to the scene
-    scene.add(startMesh);
-  
-    // Create geometry and material for the end point
-    const endGeometry = new THREE.CircleGeometry(0.1, 32);
+    const endGeometry = new THREE.CircleGeometry(maxStepSize, 32);
     const endMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff,  side: THREE.DoubleSide });
-  
-    // Create a mesh for the end point
     const endMesh = new THREE.Mesh(endGeometry, endMaterial);
     endMesh.position.set(goal[0], goal[1], 0);
-  
-    // Add the end mesh to the scene
-    scene.add(endMesh);
+    rrtcanvas.add(endMesh);
   
   
 }
@@ -263,7 +268,7 @@ function getIntersections(controller) {
   //console.log(controller);
   raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
   raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-  return raycaster.intersectObjects(group.children, false);
+  return raycaster.intersectObjects(obsticals.children, false);
 }
 
 function cleanIntersected() {
@@ -304,7 +309,7 @@ function Convert2postobox(startingPoint, endPoint) {
 
  // midpoint.position.y = 0;
   object.position.copy(midpoint);
-  group.attach(object);
+  obsticals.attach(object);
 }
 
 function animate() {

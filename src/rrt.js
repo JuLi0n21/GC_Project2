@@ -2,12 +2,16 @@ import * as THREE from "three";
 import { Tree, TreeNode } from "./tree";
 
 export class RRT {
-  constructor(start, goal, obstacles, maxStepSize, range) {
+  constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, group) {
     this.start = start;
     this.goal = goal;
     this.obstacles = obstacles;
+    console.log(this.obstacles)
     this.maxStepSize = maxStepSize;
     this.range = range;
+    this.group = group;
+    this.maxStepCount = maxStepCount;
+    this.count = 0;
 
     this.tree = new Tree(start);
   }
@@ -59,6 +63,9 @@ export class RRT {
     // Check if the point is in collision with any obstacles
     // You can define your own collision detection logic here
     // For simplicity, let's assume there are no obstacles in this example
+    //console.log(this.obstacles)
+    if(!this.obstacles.children) {return true}
+    this.obstacles.children.forEach(obj => {obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < this.maxStepSize; return false})
     return true;
   }
 
@@ -80,7 +87,8 @@ export class RRT {
     let path = [];
     let foundGoal = false;
 
-    while (!foundGoal) {
+    while (!foundGoal && (this.maxStepCount > this.count)) {
+      this.count++;
       const newNode = this.expand();
       if (newNode) {
         path.push(newNode);
@@ -96,26 +104,3 @@ export class RRT {
   }
 
 }
-
-
-
-// Define start and goal positions
-const start = [10, 10];
-const goal = [500, 500];
-
-// Define obstacles (empty for simplicity)
-const obstacles = [];
-
-// Define maximum step size
-const maxStepSize = 5;
-
-// Create an instance of RRT
-const rrt = new RRT(start, goal, obstacles, maxStepSize);
-
-// Find the path
-//const path = rrt.findPath();
-
-// Print the path
-//console.log("Path:", path);
-
-//visualizePath(rrt.tree, start, goal);
