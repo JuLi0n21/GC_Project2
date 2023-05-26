@@ -65,7 +65,14 @@ export class RRT {
     // For simplicity, let's assume there are no obstacles in this example
     //console.log(this.obstacles)
     if(!this.obstacles.children) {return true}
-    this.obstacles.children.forEach(obj => {obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < this.maxStepSize; return false})
+    this.obstacles.children.forEach(obj => {
+     if(obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < this.maxStepSize){
+      console.log(obj.position.distanceTo(new THREE.Vector3(point[1], point[0], 0)));
+      return false
+     }; 
+      
+    });
+
     return true;
   }
 
@@ -101,6 +108,43 @@ export class RRT {
     }
 
     return path;
+  }
+
+  visulize(){
+
+    this.findPath();
+    // Create material for the tree edges
+    const treeMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+  
+    // Traverse the tree and render the edges
+    this.tree.traverseDFS(this.tree.root, (node) => {
+      for (const child of node.children) {
+        const edgeGeometry = new THREE.BufferGeometry();
+        const edgePoints = [
+          new THREE.Vector3(node.value[0], node.value[1], 0),
+          new THREE.Vector3(child.value[0], child.value[1], 0),
+        ];
+        edgeGeometry.setFromPoints(edgePoints);
+        const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
+        this.group.add(edgeLine);
+      }
+    });
+    // rrtcanvas.position.set(-1,0.5,-1);
+    this.group.rotateX(Math.PI / 2)
+
+    // Create geometry and material for the start point
+    const startGeometry = new THREE.CircleGeometry(this.maxStepSize, 32);
+    const startMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    const startMesh = new THREE.Mesh(startGeometry, startMaterial);
+    startMesh.position.set(this.start[0], this.start[1], 0);
+    this.group.add(startMesh);
+  
+    const goalGeometry = new THREE.CircleGeometry(this.maxStepSize, 32);
+    const goalMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff,  side: THREE.DoubleSide });
+    const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
+    goalMesh.position.set(this.goal[0], this.goal[1], 0);
+    this.group.add(goalMesh);
+  
   }
 
 }

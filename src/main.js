@@ -92,8 +92,9 @@ function init() {
 
   const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0xf5f5f5, side: THREE.DoubleSide }))
   //obst.rotateX(Math.PI / 2)
-  obst.position.set(0.0,0,0)
+  obst.position.set(2,2,0)
   obsticals.add(obst)
+
   let positionBeforePress = new THREE.Vector3();
 
   vrControl = VRControl(renderer);
@@ -163,52 +164,23 @@ function init() {
   drawgui(scene);
 
   const start = [1,1];
-  const goal = [1.5, 1];
-  const maxStepSize = 0.2;
+  const goal = [5, 5];
+  const maxStepSize = 0.5;
   const maxStepCount = 10000;
-  const range = 2;
+  const range = 5;
   const rrtcanvas = new THREE.Group();
+  rrtcanvas.attach(obsticals)
 
   const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
   
-  new Worker(rrt.findPath())
+  rrt.visulize();
+  console.log("Startign RRT")
+   new Worker(rrt.findPath())
   
 
 
    scene.add(rrtcanvas);
-   rrtcanvas.attach(obsticals)
-  
-    // Create material for the tree edges
-    const treeMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-  
-    // Traverse the tree and render the edges
-    rrt.tree.traverseDFS(rrt.tree.root, (node) => {
-      for (const child of node.children) {
-        const edgeGeometry = new THREE.BufferGeometry();
-        const edgePoints = [
-          new THREE.Vector3(node.value[0], node.value[1], 0),
-          new THREE.Vector3(child.value[0], child.value[1], 0),
-        ];
-        edgeGeometry.setFromPoints(edgePoints);
-        const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
-        rrtcanvas.add(edgeLine);
-      }
-    });
- // rrtcanvas.position.set(-1,0.5,-1);
-  rrtcanvas.rotateX(Math.PI / 2)
-
-    // Create geometry and material for the start point
-    const startGeometry = new THREE.CircleGeometry(maxStepSize, 32);
-    const startMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-    const startMesh = new THREE.Mesh(startGeometry, startMaterial);
-    startMesh.position.set(start[0], start[1], 0);
-    rrtcanvas.add(startMesh);
-  
-    const endGeometry = new THREE.CircleGeometry(maxStepSize, 32);
-    const endMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff,  side: THREE.DoubleSide });
-    const endMesh = new THREE.Mesh(endGeometry, endMaterial);
-    endMesh.position.set(goal[0], goal[1], 0);
-    rrtcanvas.add(endMesh);
+   
   
   
 }
