@@ -83,7 +83,7 @@ function init() {
 
   controls = new OrbitControls(camera, renderer.domElement);
   camera.position.set(0, 1.6, 0);
-  controls.target = new THREE.Vector3(0, 1, -1.8);
+  controls.target = new THREE.Vector3(0, 1, 0);
 
   // controllers
 
@@ -92,7 +92,7 @@ function init() {
 
   const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0xf5f5f5, side: THREE.DoubleSide }))
   //obst.rotateX(Math.PI / 2)
-  obst.position.set(0.5,0,0)
+  obst.position.set(0.0,0,0)
   obsticals.add(obst)
   let positionBeforePress = new THREE.Vector3();
 
@@ -176,7 +176,7 @@ function init() {
 
 
    scene.add(rrtcanvas);
-   rrtcanvas.add(obsticals)
+   rrtcanvas.attach(obsticals)
   
     // Create material for the tree edges
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
@@ -194,7 +194,7 @@ function init() {
         rrtcanvas.add(edgeLine);
       }
     });
-  rrtcanvas.position.set(-1,0.5,-1);
+ // rrtcanvas.position.set(-1,0.5,-1);
   rrtcanvas.rotateX(Math.PI / 2)
 
     // Create geometry and material for the start point
