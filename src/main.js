@@ -9,12 +9,12 @@ import { HTMLMesh } from "three/addons/interactive/HTMLMesh.js";
 import { InteractiveGroup } from "three/addons/interactive/InteractiveGroup.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import ThreeMeshUI from "three-mesh-ui";
-import { drawgui, updateButtons } from "./threegui";
+import ThreeMeshUI, { Block } from "three-mesh-ui";
+import { algoGUI, updateButtons } from "./threegui";
 import VRControl from "./utils/VRControl.js";
 import { RRT } from "./rrt";
 
-let camera, scene, renderer, loader, stats, statsMesh, raycaster, controls;
+let camera, scene, renderer, loader, stats, statsMesh, raycaster, controls, dolly;
 
 let INTERSECTED;
 const intersected = [];
@@ -51,7 +51,6 @@ function init() {
     0.1,
     1000
   );
-  camera.position.set(0, 1.6, 3);
 
   room = new THREE.LineSegments(
     new BoxLineGeometry(6, 6, 6, 10, 10, 10),
@@ -79,11 +78,19 @@ function init() {
 
   document.body.appendChild(VRButton.createButton(renderer));
 
+  dolly = new THREE.Object3D();
+  dolly.position.set(0,1.6,0);
+  dolly.add ( camera)
+  scene.add( dolly )
+
+  const dummyCam = new THREE.Object3D( dolly )
+  camera.add ( dummyCam );
+  
   // Orbit controls for no-vr
 
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set(0, 1.6, 0);
-  controls.target = new THREE.Vector3(0, 1, 0);
+  camera.position.set(2, 2, 8);
+  controls.target = new THREE.Vector3(2,2,0);
 
 
   let positionBeforePress = new THREE.Vector3();
@@ -91,7 +98,8 @@ function init() {
   vrControl = VRControl(renderer);
 
   //handle controller 1
-  scene.add(vrControl.controllerGrips[0], vrControl.controllers[0]);
+
+  dolly.add(vrControl.controllerGrips[0], vrControl.controllers[0]);
 
   //select button
   vrControl.controllers[0].addEventListener("select", (event) => {
@@ -121,7 +129,8 @@ function init() {
   });
 
   //handle controller 2
-  scene.add(vrControl.controllerGrips[1], vrControl.controllers[1]);
+  dolly.add(vrControl.controllerGrips[1], vrControl.controllers[1]);
+  //dolly.attach(vrControl.controllerGrips[1], vrControl.controllers[1]);
 
   //select button
   vrControl.controllers[1].addEventListener("select", (event) => {
@@ -129,11 +138,17 @@ function init() {
   });
   vrControl.controllers[1].addEventListener("selectstart", (event) => {
     vrControl.controllers[1].userData.selected = true;
-    positionBeforePress.copy(vrControl.controllers[1].position);
+    let pos = new THREE.Vector3;
+    pos.copy(vrControl.controllers[1].position);
+    pos.y += dolly.position.y;
+    positionBeforePress.copy(pos)
   });
   vrControl.controllers[1].addEventListener("selectend", () => {
     vrControl.controllers[1].userData.selected = false;
-    Convert2postobox(positionBeforePress, vrControl.controllers[1].position);
+    let pos = new THREE.Vector3;
+    pos.copy(vrControl.controllers[1].position);
+    pos.y += dolly.position.y;
+    Convert2postobox(positionBeforePress, pos);
   });
   //squezze button
   vrControl.controllers[1].addEventListener("squeezestart", (event) => {});
@@ -152,35 +167,47 @@ function init() {
 
   window.addEventListener("resize", onWindowResize);
 
-  drawgui(scene);
-
-
   obsticals = new THREE.Group();
 
-  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
-  obst.position.set(2,2,0)
+  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst.position.set(2,0,2);
+  obst.rotateX(Math.PI/2)
   obsticals.add(obst)
 
-  const start = [1, 1];
-  const goal = [5, 5];
-  const maxStepSize = 0.2;
-  const maxStepCount = 10000;
-  const range = 5;
-  const rrtcanvas = new THREE.Group();
-  rrtcanvas.attach(obsticals)
+  const obst2 = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst2.position.set(-2,0,-2);
+  obst2.rotateX(Math.PI/2)
+  obsticals.add(obst2)
+  const obst3 = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst3.position.set(-2,0,2);
+  obst3.rotateX(Math.PI/2)
+  obsticals.add(obst3)
 
+  const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  box.position.set(3,3,-0.5);
+
+  obsticals.add(obst)
+  //obsticals.add(box)
+  
+  scene.add(obsticals)
+  algoGUI(scene, obsticals);
+
+
+  let rrtcanvas = new THREE.Group;
+
+  const start = [1, 1];
+  const goal = [2, -2];
+  const maxStepSize = 0.1;
+  const maxStepCount = 10000;
+  const range = 6;
+ 
   const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
   
   rrt.visulize();
   console.log("Startign RRT")
-   new Worker(rrt.findPath())
   
-
-
-   scene.add(rrtcanvas);
-   
-  
-  
+  scene.add(rrtcanvas);
+ 
 }
 
 function UpdateVrControl(controller) {
@@ -224,7 +251,9 @@ function intersectObjects(controller) {
     //console.log(intersections)
     const intersection = intersections[0];
 
+    
     const object = intersection.object;
+    console.log(object);
     object.material.emissive.r = 1;
     intersected.push(object);
   } else {
@@ -256,30 +285,35 @@ function Convert2postobox(startingPoint, endPoint) {
 
   const geometries = [
     new THREE.BoxGeometry(distance, distance, distance),
+    new THREE.CircleGeometry(distance, 32),
     new THREE.ConeGeometry(0.2, 0.2, 64),
     new THREE.CylinderGeometry(0.2, 0.2, 0.2, 64),
     new THREE.IcosahedronGeometry(0.2, 8),
     new THREE.TorusGeometry(0.2, 0.04, 64, 32),
   ];
 
-  // const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
-  const geometry = geometries[0];
+   //const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
+  const geometry = geometries[1];
 
   const material = new THREE.MeshStandardMaterial({
     color: Math.random() * 0xffffff,
     roughness: 0.7,
     metalness: 0.0,
+    side: THREE.DoubleSide
   });
 
   const object = new THREE.Mesh(geometry, material);
   object.castShadow = true;
   object.receiveShadow = true;
 
-  //group.add(object);
+  object.position.set(midpoint.x,0,midpoint.z);
+  
 
- // midpoint.position.y = 0;
-  object.position.copy(midpoint);
-  obsticals.attach(object);
+
+  object.rotateX(Math.PI/2)
+  console.log(object)
+  obsticals.add(object)
+
 }
 
 function animate() {
@@ -295,7 +329,7 @@ function render() {
   intersectObjects(vrControl.controllers[0]);
   intersectObjects(vrControl.controllers[1]);
  // UpdateVrControl(vrControl.controllers[1])
-
+ controls.update();
   renderer.render(scene, camera);
 
   stats.update();

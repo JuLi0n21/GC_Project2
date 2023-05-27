@@ -2,14 +2,14 @@ import * as THREE from "three";
 import { Tree, TreeNode } from "./tree";
 
 export class RRT {
-  constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, group) {
+  constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, canvas) {
     this.start = start;
     this.goal = goal;
-    this.obstacles = obstacles;
-    console.log(this.obstacles)
+    this.obstacles = new THREE.Group;
+    this.obstacles.copy(obstacles);
     this.maxStepSize = maxStepSize;
     this.range = range;
-    this.group = group;
+    this.canvas = canvas;
     this.maxStepCount = maxStepCount;
     this.count = 0;
 
@@ -17,8 +17,8 @@ export class RRT {
   }
 
   generateRandomPoint() {
-    const x = Math.random() * this.range; // Adjust the range based on your problem's domain
-    const y = Math.random() * this.range; // Adjust the range based on your problem's domain
+    const x =  Math.random() * this.range - this.range/2; // Adjust the range based on your problem's domain
+    const y = Math.random() * this.range - this.range/2; // Adjust the range based on your problem's domain
     return [x, y];
   }
 
@@ -47,32 +47,98 @@ export class RRT {
     const distance = this.calculateDistance(nearestNode.value, randomPoint);
 
     if (distance <= this.maxStepSize) {
-        return randomPoint;
-      }
-      
-      const nearestVector = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], 0);
-      const randomVector = new THREE.Vector3(randomPoint[0], randomPoint[1], 0);
-      
-      const newNodeVector = new THREE.Vector3().lerpVectors(nearestVector, randomVector, this.maxStepSize / distance);
-      const newNode = [newNodeVector.x, newNodeVector.y];
-      
-      return newNode;
+      return randomPoint;
+    }
+
+    const nearestVector = new THREE.Vector3(
+      nearestNode.value[0],
+      nearestNode.value[1],
+      0
+    );
+    const randomVector = new THREE.Vector3(randomPoint[0], randomPoint[1], 0);
+
+    const newNodeVector = new THREE.Vector3().lerpVectors(
+      nearestVector,
+      randomVector,
+      this.maxStepSize / distance
+    );
+    const newNode = [newNodeVector.x, newNodeVector.y];
+
+    return newNode;
   }
 
-  isCollisionFree(point) {
-    // add raycast to check if line is going thourgh it !IMPORTANT
-    var returnvalue = true;
-    if(!this.obstacles.children) {returnvalue =  true}
-    this.obstacles.children.forEach(obj => {
-     if(obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < this.maxStepSize){
-     console.log(point)
-      console.log(obj.position.distanceTo(new THREE.Vector3(point[1], point[0], 0)));
-      returnvalue =  false
-     }; 
-      
+  isCollisionFree(point, nearestNode) {
+
+   // console.log(point)
+    let raycaster = new THREE.Raycaster;
+    let returnvalue = true;
+    if (!this.obstacles.children) {
+      returnvalue = true;
+    }
+    let rayOrigin = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], 0)
+    let rayDirVec = new THREE.Vector3(point[0], point[1], 0).normalize();
+    //console.log(rayOrigin);
+    //console.log(rayDirVec)
+    raycaster.set(rayOrigin,rayDirVec)
+      console.log(this.obstacles)
+    this.obstacles.children.forEach((obj) => {
+       //console.log(obj)
+     // console.log(raycaster.intersectObject(obj))
+      if(raycaster.intersectObject(obj).length > 0){
+        console.log("raycast")
+        returnvalue = false
+      }
+
+      if(this.checkCollision(rayOrigin,rayDirVec,obj.position,obj.geometry.parameters.radius)){
+        console.log("math collision")
+        returnvalue = false;
+      }
+     
+      if(obj.position.distanceTo(new THREE.Vector3(point[0],point[1],0)) < obj.geometry.parameters.radius){
+        console.log("smaller")
+        returnvalue = false;
+      }
+     
     });
 
     return returnvalue;
+  }
+  
+  checkCollision(rayOrigin, rayDirection, sphereCenter, sphereRadius) {
+    /*
+    console.log(rayOrigin);
+    console.log(rayDirection);
+    console.log(sphereCenter);
+    console.log(sphereRadius);
+    */
+    const material = new THREE.LineBasicMaterial({
+      color: 0x0000ff
+    });
+    const ray = new THREE.Ray(rayOrigin, rayDirection)
+
+    let distancevec = new THREE.Vector3;
+    ray.closestPointToPoint(sphereCenter, distancevec)
+
+    const raymiddletomiddle = [];
+    raymiddletomiddle.push(distancevec, sphereCenter);
+
+    const sublinegeometry = new THREE.BufferGeometry().setFromPoints( raymiddletomiddle );
+    
+    const subline = new THREE.Line( sublinegeometry, material );
+   // this.group.add( subline );
+
+    const raytotest = [];
+    raytotest.push( rayOrigin, rayDirection);
+    
+    const raygeometry = new THREE.BufferGeometry().setFromPoints( raytotest );
+    
+    const line = new THREE.Line( raygeometry, material );
+    //this.group.add( line );
+
+    console.log(ray);
+    console.log(distancevec)
+    
+  return distancevec.length < sphereRadius;
   }
 
   expand() {
@@ -80,7 +146,7 @@ export class RRT {
     const nearestNode = this.findNearestNode(randomPoint);
     const newNode = this.generateNewNode(nearestNode, randomPoint);
 
-    if (this.isCollisionFree(newNode)) {
+    if (this.isCollisionFree(newNode, nearestNode)) {
       const newNodeObj = new TreeNode(newNode);
       nearestNode.addChild(newNodeObj);
       return newNode;
@@ -93,12 +159,11 @@ export class RRT {
     let path = [];
     let foundGoal = false;
 
-    while (!foundGoal && (this.maxStepCount > this.count)) {
+    while (!foundGoal && this.maxStepCount > this.count) {
       this.count++;
       const newNode = this.expand();
-      console.log(newNode);
+      //console.log(newNode);
       if (newNode) {
-        
         path.push(newNode);
 
         if (this.calculateDistance(newNode, this.goal) <= this.maxStepSize) {
@@ -111,8 +176,14 @@ export class RRT {
     return path;
   }
 
-  visulize(){
+  visulize() {
 
+          this.obstacles.children.forEach(obj => {
+            obj.position.set(obj.position.x , obj.position.z , obj.position.y)
+          })
+          
+    
+        this.canvas.rotation.x = (Math.PI/2)
     //ADD A visulisation from the goal node to the root node
     //ALSO add line from last node to goal
     //think about turning this into 3d
@@ -120,33 +191,39 @@ export class RRT {
     this.findPath();
     // Create material for the tree edges
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-  
+
     this.tree.traverseDFS(this.tree.root, (node) => {
       for (const child of node.children) {
         const edgeGeometry = new THREE.BufferGeometry();
         const edgePoints = [
-          new THREE.Vector3(node.value[0], node.value[1], 0),
-          new THREE.Vector3(child.value[0], child.value[1], 0),
+          new THREE.Vector3(node.value[0], node.value[1], 0.01),
+          new THREE.Vector3(child.value[0], child.value[1], 0.01),
         ];
         edgeGeometry.setFromPoints(edgePoints);
         const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
-        this.group.add(edgeLine);
+        this.canvas.add(edgeLine);
       }
     });
-    this.group.rotateX(Math.PI / 2)
+    // this.group.rotateX(Math.PI / 2)
 
-    const startGeometry = new THREE.CircleGeometry(this.maxStepSize, 32);
-    const startMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    const startGeometry = new THREE.CircleGeometry(0.1, 32);
+    const startMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff0000,
+      side: THREE.DoubleSide,
+      roughness: 0.7,
+    });
     const startMesh = new THREE.Mesh(startGeometry, startMaterial);
     startMesh.position.set(this.start[0], this.start[1], 0);
-    this.group.add(startMesh);
-  
+    this.canvas.add(startMesh);
+
     const goalGeometry = new THREE.CircleGeometry(this.maxStepSize, 32);
-    const goalMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff,  side: THREE.DoubleSide });
+    const goalMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0000ff,
+      side: THREE.DoubleSide,
+      roughness: 0.7,
+    });
     const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
     goalMesh.position.set(this.goal[0], this.goal[1], 0);
-    this.group.add(goalMesh);
-  
+    this.canvas.add(goalMesh);
   }
-
 }
