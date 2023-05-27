@@ -1,12 +1,13 @@
 import ThreeMeshUI from 'three-mesh-ui'
 import * as THREE from 'three';
+import { RRT } from './rrt';
 
 const raycaster = new THREE.Raycaster
 const objsToTest = []
 let selectState = false;
+let rrtcanvas = new THREE.Group();
 
-
-export function drawgui(scene) {
+export function algoGUI(scene, obsticals) {
     const container = new ThreeMeshUI.Block({
         height: 1.5,
         width: 1
@@ -105,6 +106,29 @@ export function drawgui(scene) {
     
     }
 
+    function renderalgo( id ) {
+        
+        scene.remove(rrtcanvas);
+        rrtcanvas = new THREE.Group;
+     
+        
+
+        if(id == 1) {
+            const start = [1, 1];
+            const goal = [2, -2];
+            const maxStepSize = 0.1;
+            const maxStepCount = 10000;
+            const range = 6;
+           
+            const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+            
+            rrt.visulize();
+            console.log("Startign RRT")
+            
+            scene.add(rrtcanvas);
+        }
+    }
+
     function makePanel() {
 
         // Container block, in which we put the two buttons.
@@ -167,6 +191,7 @@ export function drawgui(scene) {
         const buttonNext = new ThreeMeshUI.Block( buttonOptions );
         const buttonPrevious = new ThreeMeshUI.Block( buttonOptions );
     
+        const buttonRender = new ThreeMeshUI.Block( buttonOptions );
         // Add text to buttons
     
         buttonNext.add(
@@ -175,6 +200,11 @@ export function drawgui(scene) {
         buttonPrevious.add(
             new ThreeMeshUI.Text( { content: 'previous' } )
         );   
+
+        buttonRender.add(
+            new ThreeMeshUI.Text( { content: "render" } )
+        );
+
         // Create states for the buttons.
         // In the loop, we will call component.setState( 'state-name' ) when mouse hover or click
         const selectedAttributes = {
@@ -209,8 +239,20 @@ export function drawgui(scene) {
         buttonPrevious.setupState( hoveredStateAttributes );
         buttonPrevious.setupState( idleStateAttributes );
         //
-        container.add( buttonNext, buttonPrevious );
-        objsToTest.push( buttonNext, buttonPrevious );
+        buttonRender.setupState( {
+            state: 'selected',
+            attributes: selectedAttributes,
+            onSet: () => {
+    
+               renderalgo(1);
+    
+            }
+        } );
+        buttonRender.setupState( hoveredStateAttributes );
+        buttonRender.setupState( idleStateAttributes );
+        //
+        container.add( buttonNext,  buttonRender, buttonPrevious );
+        objsToTest.push( buttonNext, buttonPrevious, buttonRender );
     
     }
 
