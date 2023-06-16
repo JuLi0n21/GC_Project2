@@ -12,6 +12,7 @@ export class RRT {
     this.canvas = canvas;
     this.maxStepCount = maxStepCount;
     this.count = 0;
+    this.goalnode = new TreeNode;
 
     this.tree = new Tree(start);
   }
@@ -80,7 +81,7 @@ export class RRT {
     //console.log(rayOrigin);
     //console.log(rayDirVec)
     raycaster.set(rayOrigin,rayDirVec)
-      console.log(this.obstacles)
+     // console.log(this.obstacles)
     this.obstacles.children.forEach((obj) => {
        //console.log(obj)
      // console.log(raycaster.intersectObject(obj))
@@ -105,12 +106,7 @@ export class RRT {
   }
   
   checkCollision(rayOrigin, rayDirection, sphereCenter, sphereRadius) {
-    /*
-    console.log(rayOrigin);
-    console.log(rayDirection);
-    console.log(sphereCenter);
-    console.log(sphereRadius);
-    */
+
     const material = new THREE.LineBasicMaterial({
       color: 0x0000ff
     });
@@ -125,7 +121,6 @@ export class RRT {
     const sublinegeometry = new THREE.BufferGeometry().setFromPoints( raymiddletomiddle );
     
     const subline = new THREE.Line( sublinegeometry, material );
-   // this.group.add( subline );
 
     const raytotest = [];
     raytotest.push( rayOrigin, rayDirection);
@@ -133,10 +128,9 @@ export class RRT {
     const raygeometry = new THREE.BufferGeometry().setFromPoints( raytotest );
     
     const line = new THREE.Line( raygeometry, material );
-    //this.group.add( line );
 
-    console.log(ray);
-    console.log(distancevec)
+    //console.log(ray);
+    //console.log(distancevec)
     
   return distancevec.length < sphereRadius;
   }
@@ -147,9 +141,9 @@ export class RRT {
     const newNode = this.generateNewNode(nearestNode, randomPoint);
 
     if (this.isCollisionFree(newNode, nearestNode)) {
-      const newNodeObj = new TreeNode(newNode);
+      const newNodeObj = new TreeNode(newNode, nearestNode);
       nearestNode.addChild(newNodeObj);
-      return newNode;
+      return newNodeObj;
     }
 
     return null;
@@ -162,13 +156,14 @@ export class RRT {
     while (!foundGoal && this.maxStepCount > this.count) {
       this.count++;
       const newNode = this.expand();
-      //console.log(newNode);
       if (newNode) {
         path.push(newNode);
-
-        if (this.calculateDistance(newNode, this.goal) <= this.maxStepSize) {
+        //console.log(newNode.value)
+        if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
           path.push(this.goal);
           foundGoal = true;
+          this.goalnode = newNode;
+          console.log(newNode)
         }
       }
     }
@@ -225,5 +220,21 @@ export class RRT {
     const goalMesh = new THREE.Mesh(goalGeometry, goalMaterial);
     goalMesh.position.set(this.goal[0], this.goal[1], 0);
     this.canvas.add(goalMesh);
+
+    this.drawGoalPath(this.goalnode);
+  }
+
+  drawGoalPath(goalnode) {
+    const points = [];
+    while (goalnode.parent != null) {
+      points.push(new THREE.Vector3(goalnode.value[0], goalnode.value[1]));
+      goalnode = goalnode.parent;
+    }
+
+    const treeMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    const edgeGeometry = new THREE.BufferGeometry();
+    edgeGeometry.setFromPoints(points);
+    const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
+    this.canvas.add(edgeLine);
   }
 }
