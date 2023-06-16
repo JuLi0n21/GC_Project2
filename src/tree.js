@@ -1,8 +1,8 @@
 export class TreeNode {
-  constructor(value) {
+  constructor(value , parent = null) {
     this.value = value;
     this.children = [];
-    this.parent = null;
+    this.parent = parent;
   }
 
   addChild(node) {
