@@ -125,6 +125,7 @@ export default function VRControl( renderer ) {
 		controller.add( ray, point );
 		controller.ray = ray;
 		controller.point = point;
+		controller.userData.selcted = undefined;
 
 	} );
 

@@ -27,6 +27,7 @@ let gamepadAxes;
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
 let obsticals, vrControl;
+let positionBeforePress = new THREE.Vector3();
 
 const clock = new THREE.Clock();
 
@@ -92,9 +93,6 @@ function init() {
   camera.position.set(2, 2, 8);
   controls.target = new THREE.Vector3(2,2,0);
 
-
-  let positionBeforePress = new THREE.Vector3();
-
   vrControl = VRControl(renderer);
 
   //handle controller 1
@@ -138,10 +136,12 @@ function init() {
   });
   vrControl.controllers[1].addEventListener("selectstart", (event) => {
     vrControl.controllers[1].userData.selected = true;
+    console.log(vrControl.controllers[1].userData)
     let pos = new THREE.Vector3;
     pos.copy(vrControl.controllers[1].position);
     pos.y += dolly.position.y;
-    positionBeforePress.copy(pos)
+    positionBeforePress.copy(pos);
+
   });
   vrControl.controllers[1].addEventListener("selectend", () => {
     vrControl.controllers[1].userData.selected = false;
@@ -203,31 +203,21 @@ function init() {
  
   const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
   
-  rrt.visulize();
+ // rrt.visulize();
   console.log("Startign RRT")
   
   scene.add(rrtcanvas);
  
 }
 
-function UpdateVrControl(controller) {
-   if(controller.gamepad){
-     if (controller.gamepad.buttons[0].pressed) {
-       console.log("button 0");
-     }
-     if (controller.gamepad.buttons[1].pressed) {
-       console.log("button 1");
-     }
-     if (controller.gamepad.buttons[2].pressed) {
-       console.log("button 2");
-     }
-     if (controller.gamepad.buttons[3].pressed) {
-       console.log("button 3");
-     }
-     if (controller.gamepad.buttons[4].pressed) {
-       console.log("button 4");
-     }
-   }
+function handlecontrollers(controller) {
+  //console.log(controller.userData);
+  if (controller.userData.selected) {
+    let pos = new THREE.Vector3;
+    pos.copy(vrControl.controllers[1].position);
+    pos.y += dolly.position.y;
+    Objectplacementindicator(positionBeforePress, pos);
+  }
 }
 
 function onWindowResize() {
@@ -257,6 +247,7 @@ function intersectObjects(controller) {
     object.material.emissive.r = 1;
     intersected.push(object);
   } else {
+
   }
 }
 
@@ -278,6 +269,9 @@ function cleanIntersected() {
 }
 
 function Convert2postobox(startingPoint, endPoint) {
+  if(tempobjectplacement){
+    scene.remove(tempobjectplacement)
+  }
   const midpoint = new THREE.Vector3()
     .addVectors(startingPoint, endPoint)
     .multiplyScalar(0.5);
@@ -294,7 +288,6 @@ function Convert2postobox(startingPoint, endPoint) {
 
    //const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
   const geometry = geometries[1];
-
   const material = new THREE.MeshStandardMaterial({
     color: Math.random() * 0xffffff,
     roughness: 0.7,
@@ -305,14 +298,45 @@ function Convert2postobox(startingPoint, endPoint) {
   const object = new THREE.Mesh(geometry, material);
   object.castShadow = true;
   object.receiveShadow = true;
-
   object.position.set(midpoint.x,0,midpoint.z);
-  
-
-
   object.rotateX(Math.PI/2)
   console.log(object)
   obsticals.add(object)
+
+}
+
+let tempobjectplacement;
+
+function Objectplacementindicator(startingPoint, endPoint) {
+  if(tempobjectplacement){
+    scene.remove(tempobjectplacement)
+  }
+  const midpoint = new THREE.Vector3()
+    .addVectors(startingPoint, endPoint)
+    .multiplyScalar(0.5);
+  const distance = startingPoint.distanceTo(endPoint);
+
+  const geometries = [
+    new THREE.BoxGeometry(distance, distance, distance),
+    new THREE.CircleGeometry(distance, 32),
+    new THREE.CylinderGeometry(distance, distance, midpoint, 64),
+  ];
+
+   //const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
+  const geometry = geometries[1];
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffff00,
+    side: THREE.DoubleSide
+  });
+
+  const object = new THREE.Mesh(geometry, material);
+  object.castShadow = true;
+  object.receiveShadow = true;
+  object.position.set(midpoint.x,0,midpoint.z);
+  object.rotateX(Math.PI/2)
+  console.log(object)
+  tempobjectplacement = object;
+  scene.add(tempobjectplacement)
 
 }
 
@@ -328,9 +352,11 @@ function render() {
   updateButtons(renderer, vrControl, 1);
   intersectObjects(vrControl.controllers[0]);
   intersectObjects(vrControl.controllers[1]);
+  handlecontrollers(vrControl.controllers[1]);
  // UpdateVrControl(vrControl.controllers[1])
  controls.update();
   renderer.render(scene, camera);
+ 
 
   stats.update();
 }
