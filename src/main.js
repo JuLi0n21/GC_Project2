@@ -203,7 +203,7 @@ function init() {
  
   const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
   
- // rrt.visulize();
+  //rrt.visulize();
   console.log("Startign RRT")
   
   scene.add(rrtcanvas);
@@ -311,6 +311,8 @@ function Objectplacementindicator(startingPoint, endPoint) {
   if(tempobjectplacement){
     scene.remove(tempobjectplacement)
   }
+
+  startingPoint.y = endPoint.y;
   const midpoint = new THREE.Vector3()
     .addVectors(startingPoint, endPoint)
     .multiplyScalar(0.5);
@@ -324,7 +326,7 @@ function Objectplacementindicator(startingPoint, endPoint) {
 
    //const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
   const geometry = geometries[1];
-  const material = new THREE.MeshBasicMaterial({
+  const material = new THREE.MeshStandardMaterial({
     color: 0xffff00,
     side: THREE.DoubleSide
   });
@@ -332,7 +334,7 @@ function Objectplacementindicator(startingPoint, endPoint) {
   const object = new THREE.Mesh(geometry, material);
   object.castShadow = true;
   object.receiveShadow = true;
-  object.position.set(midpoint.x,0,midpoint.z);
+  object.position.set(midpoint.x,endPoint.y,midpoint.z);
   object.rotateX(Math.PI/2)
   console.log(object)
   tempobjectplacement = object;

@@ -171,7 +171,7 @@ export class RRT {
     return path;
   }
 
-  visulize() {
+  async visulize() {
 
           this.obstacles.children.forEach(obj => {
             obj.position.set(obj.position.x , obj.position.z , obj.position.y)
