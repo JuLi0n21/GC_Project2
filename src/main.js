@@ -13,6 +13,7 @@ import ThreeMeshUI, { Block } from "three-mesh-ui";
 import { algoGUI, updateButtons } from "./threegui";
 import VRControl from "./utils/VRControl.js";
 import { RRT } from "./rrt";
+import { RRTStar } from "./rrtstar";
 
 let camera, scene, renderer, loader, stats, statsMesh, raycaster, controls, dolly;
 
@@ -26,7 +27,7 @@ let gamepad;
 let gamepadAxes;
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
-let obsticals, vrControl;
+let obsticals, obsticalhitboxes ,vrControl;
 let positionBeforePress = new THREE.Vector3();
 
 const clock = new THREE.Clock();
@@ -157,8 +158,20 @@ function init() {
     const obj = getIntersections(vrControl.controllers[1]);
     if (obj[0]!= null) {
       obsticals.remove(obj[0].object);
-    }
-  });
+
+      obsticals.children.forEach(obje => {
+
+        console.log(obj[0].object.userData.connection)
+        console.log(obje.uuid)
+      
+        if(obje.uuid === obj[0].object.userData.connection){
+          obsticals.remove(obje);
+          } 
+      })
+        
+  };
+})
+
   vrControl.controllers[1].addEventListener("squeezeend", (event) => {});
   //else
   vrControl.controllerGrips[1].addEventListener("connected", (event) => {
@@ -167,6 +180,7 @@ function init() {
 
   window.addEventListener("resize", onWindowResize);
 
+  obsticalhitboxes = new THREE.Group();
   obsticals = new THREE.Group();
 
   const obst = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
@@ -189,6 +203,8 @@ function init() {
   obsticals.add(obst)
   //obsticals.add(box)
   
+  // scene.add(obsticals)
+  //obsticalhitboxes.copy(obsticals)
   scene.add(obsticals)
   algoGUI(scene, obsticals);
 
@@ -197,13 +213,17 @@ function init() {
 
   const start = [1, 1];
   const goal = [2, -2];
-  const maxStepSize = 0.1;
-  const maxStepCount = 10000;
+  const maxStepSize = 0.2;
+  const maxStepCount = 1000;
   const range = 6;
  
-  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
-  
+//  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+
   //rrt.visulize();
+
+  const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+
+  rrtstar.visualize();
   console.log("Startign RRT")
   
   scene.add(rrtcanvas);
@@ -243,7 +263,7 @@ function intersectObjects(controller) {
 
     
     const object = intersection.object;
-    console.log(object);
+    //console.log(object);
     object.material.emissive.r = 1;
     intersected.push(object);
   } else {
@@ -258,7 +278,7 @@ function getIntersections(controller) {
   //console.log(controller);
   raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
   raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-  return raycaster.intersectObjects(obsticals.children, false);
+  return raycaster.intersectObjects(obsticals.children, true);
 }
 
 function cleanIntersected() {
@@ -269,9 +289,10 @@ function cleanIntersected() {
 }
 
 function Convert2postobox(startingPoint, endPoint) {
-  if(tempobjectplacement){
-    scene.remove(tempobjectplacement)
-  }
+
+  //console.log(startingPoint, endPoint);
+  startingPoint.y = endPoint.y; 
+
   const midpoint = new THREE.Vector3()
     .addVectors(startingPoint, endPoint)
     .multiplyScalar(0.5);
@@ -300,47 +321,71 @@ function Convert2postobox(startingPoint, endPoint) {
   object.receiveShadow = true;
   object.position.set(midpoint.x,0,midpoint.z);
   object.rotateX(Math.PI/2)
-  console.log(object)
+ // console.log(object)
+ object.userData.connection = tempobjectplacement.uuid;
+ tempobjectplacement.userData.connection = object.uuid;
+
+ console.log(object.userData)
+ console.log(tempobjectplacement.userData)
+ object.visible = false;
   obsticals.add(object)
+  obsticals.add(tempobjectplacement);
 
 }
 
 let tempobjectplacement;
+let tempobjectplacement2;
 
 function Objectplacementindicator(startingPoint, endPoint) {
-  if(tempobjectplacement){
+  if(tempobjectplacement || tempobjectplacement2){
     scene.remove(tempobjectplacement)
+    scene.remove(tempobjectplacement2)
   }
 
-  startingPoint.y = endPoint.y;
+
+  const flatstartpoint = new THREE.Vector3
+  flatstartpoint.copy(startingPoint);
+  flatstartpoint.y = endPoint.y;
+  
   const midpoint = new THREE.Vector3()
-    .addVectors(startingPoint, endPoint)
+    .addVectors(flatstartpoint, endPoint)
     .multiplyScalar(0.5);
-  const distance = startingPoint.distanceTo(endPoint);
+  
+  const distance = flatstartpoint.distanceTo(endPoint);
 
   const geometries = [
     new THREE.BoxGeometry(distance, distance, distance),
     new THREE.CircleGeometry(distance, 32),
-    new THREE.CylinderGeometry(distance, distance, midpoint, 64),
+    new THREE.CylinderGeometry(distance, distance, endPoint.y, 64),
   ];
 
-   //const geometry = geometries[ Math.floor( Math.random() * geometries.length ) ];
-  const geometry = geometries[1];
+  const circlegeometry = geometries[1];
   const material = new THREE.MeshStandardMaterial({
     color: 0xffff00,
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.1,
   });
 
-  const object = new THREE.Mesh(geometry, material);
-  object.castShadow = true;
-  object.receiveShadow = true;
-  object.position.set(midpoint.x,endPoint.y,midpoint.z);
-  object.rotateX(Math.PI/2)
-  console.log(object)
-  tempobjectplacement = object;
-  scene.add(tempobjectplacement)
+  const circle = new THREE.Mesh(circlegeometry, material);
+  circle.position.set(midpoint.x,endPoint.y,midpoint.z); // in case circle
+  circle.rotateX(Math.PI/2) // only rotate when circle
+  // tempobjectplacement = circle;
+  // scene.add(tempobjectplacement)
 
+
+  const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(distance, distance, endPoint.y, 64), material);
+
+  const cylidnermidpoint = startingPoint.distanceTo(endPoint);
+
+  cylinder.position.set(midpoint.x,endPoint.y/2,midpoint.z);
+  tempobjectplacement = cylinder;
+
+  scene.add(tempobjectplacement);
+  
 }
+
+
 
 function animate() {
   renderer.setAnimationLoop(render);
@@ -351,7 +396,7 @@ function render() {
   ThreeMeshUI.update();
   cleanIntersected();
   updateButtons(renderer, vrControl, 0);
-  updateButtons(renderer, vrControl, 1);
+ // updateButtons(renderer, vrControl, 1);
   intersectObjects(vrControl.controllers[0]);
   intersectObjects(vrControl.controllers[1]);
   handlecontrollers(vrControl.controllers[1]);

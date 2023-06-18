@@ -1,9 +1,16 @@
 import * as THREE from "three";
 import { Tree, TreeNode } from "./tree";
 
-export class RRT {
+/*
+create newNode -> search nearest node -> check for coolsions -> set it as parent 
+-> get distance from the combined length of the parent nodes 
+-> rewire check if nodes in range have shorter length -> check for collisions form new path
+
+*/
+
+export class RRTStar {
   constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, canvas) {
-    this.start = start;
+    this.start = start
     this.goal = goal;
     this.obstacles = new THREE.Group;
     this.obstacles.copy(obstacles);
@@ -26,7 +33,7 @@ export class RRT {
   findNearestNode(point) {
     let nearestNode = null;
     let nearestDistance = Infinity;
-
+  
     this.tree.traverseDFS(this.tree.root, (node) => {
       const distance = this.calculateDistance(node.value, point);
       if (distance < nearestDistance) {
@@ -34,10 +41,12 @@ export class RRT {
         nearestDistance = distance;
       }
     });
-
+  
+    nearestNode.distance = nearestDistance; 
+  
     return nearestNode;
   }
-
+  
   calculateDistance(pointA, pointB) {
     const dx = pointB[0] - pointA[0];
     const dy = pointB[1] - pointA[1];
@@ -45,6 +54,7 @@ export class RRT {
   }
 
   generateNewNode(nearestNode, randomPoint) {
+    console.log(nearestNode)
     const distance = this.calculateDistance(nearestNode.value, randomPoint);
 
     if (distance <= this.maxStepSize) {
@@ -63,7 +73,8 @@ export class RRT {
       randomVector,
       this.maxStepSize / distance
     );
-    const newNode = [newNodeVector.x, newNodeVector.y];
+
+    const newNode =[newNodeVector.x, newNodeVector.y];
 
     return newNode;
   }
@@ -150,16 +161,97 @@ export class RRT {
     const randomPoint = this.generateRandomPoint();
     const nearestNode = this.findNearestNode(randomPoint);
     const newNode = this.generateNewNode(nearestNode, randomPoint);
-
+  
     if (this.isCollisionFree(newNode, nearestNode)) {
       const newNodeObj = new TreeNode(newNode, nearestNode);
+      console.log("distace: ",newNodeObj.distance)
       nearestNode.addChild(newNodeObj);
+
+      let distance = 0;
+      let helpernode = newNodeObj;
+      while(helpernode.parent != null) {
+          distance += this.calculateDistance(helpernode, helpernode.parent);
+          console.log(helpernode.distance, helpernode.parent.distance)
+          console.log(distance) //ERROR IN CALCULATE DISTACNE
+          helpernode = helpernode.parent;
+        
+      }
+      newNodeObj.distance = distance;
+      console.log("newnode.distace: ",newNodeObj.distance)
+      const nearbyNodes = this.findNearbyNodes(newNodeObj, this.maxStepSize * 3);
+      this.rewire(newNodeObj, nearbyNodes);
       return newNodeObj;
     }
-
+  
     return null;
   }
 
+  findNearbyNodes(newNode, radius) {
+    const nearbyNodes = [];
+  
+    this.tree.traverseDFS(this.tree.root, (node) => {
+      const distance = this.calculateDistance(node.value, newNode.value);
+      if (distance <= radius) {
+        nearbyNodes.push(node);
+      }
+    });
+
+    return nearbyNodes;
+  }
+
+  calculateTotalDistance(node) {
+    let totalDistance = 0;
+    let currentNode = node;
+  
+    while (currentNode.parent !== null) {
+      totalDistance += this.calculateDistance(currentNode.value, currentNode.parent.value);
+      currentNode = currentNode.parent;
+    }
+  
+    return totalDistance;
+  }
+  
+  
+  rewire(newNode) {
+    const totalDistance = this.calculateTotalDistance(newNode);
+    console.log(totalDistance)
+    console.log(newNode.distance)
+    if (totalDistance < newNode.distance) {
+      newNode.parent.removeChild(newNode);
+      newNode.distance = totalDistance;
+      this.updateDistanceRecursive(newNode.parent);
+      newNode.parent = null;
+      this.tree.root = newNode;
+      this.rewireRecursive(newNode);
+    }
+  }
+  
+  updateDistanceRecursive(node) {
+    let distance = 0;
+    let helperNode = node;
+    while (helperNode.parent !== null) {
+      distance += this.calculateDistance(helperNode.value, helperNode.parent.value);
+      helperNode = helperNode.parent;
+    }
+    node.distance = distance;
+    for (const child of node.children) {
+      this.updateDistanceRecursive(child);
+    }
+  }
+  
+  rewireRecursive(node) {
+    for (const child of node.children) {
+      const totalDistance = node.distance + this.calculateDistance(node.value, child.value);
+      if (totalDistance < child.distance) {
+        child.parent.removeChild(child);
+        child.parent = node;
+        child.distance = totalDistance;
+        node.addChild(child);
+        this.rewireRecursive(child);
+      }
+    }
+  }
+  
   findPath() {
     let path = [];
     let foundGoal = false;
@@ -179,10 +271,13 @@ export class RRT {
       }
     }
 
+    console.log(path)
+
     return path;
   }
 
-  async visulize() {
+  visualize() {
+    console.log("lets go")
 
           this.obstacles.children.forEach(obj => {
             obj.position.set(obj.position.x , obj.position.z , obj.position.y)
@@ -242,10 +337,11 @@ export class RRT {
       goalnode = goalnode.parent;
     }
 
-    const treeMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    const treeMaterial = new THREE.LineBasicMaterial({ color: 0xff0ff0 });
     const edgeGeometry = new THREE.BufferGeometry();
     edgeGeometry.setFromPoints(points);
     const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
     this.canvas.add(edgeLine);
+    console.log(this.canvas)
   }
 }

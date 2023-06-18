@@ -3,6 +3,8 @@ export class TreeNode {
     this.value = value;
     this.children = [];
     this.parent = parent;
+    this.distance = Infinity;
+    this.totaldistance = Infinity;
   }
 
   addChild(node) {
@@ -31,6 +33,14 @@ export class TreeNode {
   getParent(node) {
     return node.children;
   }
+
+  euclideanDistance(nodeA, nodeB) {
+    console.log(nodeA, nodeB)
+    const dx = nodeB.value[0] - nodeA.value[0];
+    const dy = nodeB.value[1] - nodeA.value[1];
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  
 }
 
 export class Tree {
