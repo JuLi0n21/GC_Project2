@@ -1,6 +1,7 @@
 import ThreeMeshUI from 'three-mesh-ui'
 import * as THREE from 'three';
 import { RRT } from './rrt';
+import { RRTStar } from './rrtstar';
 
 const raycaster = new THREE.Raycaster
 const objsToTest = []
@@ -123,6 +124,21 @@ export function algoGUI(scene, obsticals) {
             const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
             
             rrt.visulize();
+            console.log("Startign RRT")
+            
+            scene.add(rrtcanvas);
+        }
+
+        if(id == 1) {
+            const start = [1, 1];
+            const goal = [2, -2];
+            const maxStepSize = 0.1;
+            const maxStepCount = 1000;
+            const range = 6;
+           
+            const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+            
+            rrtstar.visualize();
             console.log("Startign RRT")
             
             scene.add(rrtcanvas);

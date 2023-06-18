@@ -8,6 +8,8 @@ create newNode -> search nearest node -> check for coolsions -> set it as parent
 
 */
 
+let rewriecoutner = 0;
+
 export class RRTStar {
   constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, canvas) {
     this.start = start
@@ -21,7 +23,8 @@ export class RRTStar {
     this.count = 0;
     this.goalnode = new TreeNode;
 
-    this.tree = new Tree(start);
+    this.tree = new Tree(  [ start[0], start[1] ] );
+    
   }
 
   generateRandomPoint() {
@@ -42,8 +45,6 @@ export class RRTStar {
       }
     });
   
-    nearestNode.distance = nearestDistance; 
-  
     return nearestNode;
   }
   
@@ -54,7 +55,6 @@ export class RRTStar {
   }
 
   generateNewNode(nearestNode, randomPoint) {
-    console.log(nearestNode)
     const distance = this.calculateDistance(nearestNode.value, randomPoint);
 
     if (distance <= this.maxStepSize) {
@@ -81,116 +81,167 @@ export class RRTStar {
 
   isCollisionFree(point, nearestNode) {
 
-   // console.log(point)
-    let raycaster = new THREE.Raycaster;
-    let returnvalue = true;
-    if (!this.obstacles.children) {
-      returnvalue = true;
-    }
-    let rayOrigin = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], 0)
-    let rayDirVec = new THREE.Vector3(point[0], point[1], 0).normalize();
-    //console.log(rayOrigin);
-    //console.log(rayDirVec)
-    raycaster.set(rayOrigin,rayDirVec)
-     // console.log(this.obstacles)
-    this.obstacles.children.forEach((obj) => {
-     //  console.log(obj.geometry)
-     // console.log(raycaster.intersectObject(obj))
-     if(obj.geometry.type !== "CylinderGeometry") {
-       if (raycaster.intersectObject(obj).length > 0) {
-       //  console.log("raycast");
-         returnvalue = false;
-       }
-
-       if (
-         this.checkCollision(
-           rayOrigin,
-           rayDirVec,
-           obj.position,
-           obj.geometry.parameters.radius
-         )
-       ) {
-        // console.log("math collision");
-         returnvalue = false;
-       }
-
-       if (
-         obj.position.distanceTo(new THREE.Vector3(point[0], point[1], 0)) <
-         obj.geometry.parameters.radius
-       ) {
-       //  console.log("smaller");
-         returnvalue = false;
-       }
+    // console.log(point)
+     let raycaster = new THREE.Raycaster;
+     let returnvalue = true;
+     if (!this.obstacles.children) {
+       returnvalue = true;
      }
-    });
-
-    return returnvalue;
-  }
-  
-  checkCollision(rayOrigin, rayDirection, sphereCenter, sphereRadius) {
-
-    const material = new THREE.LineBasicMaterial({
-      color: 0x0000ff
-    });
-    const ray = new THREE.Ray(rayOrigin, rayDirection)
-
-    let distancevec = new THREE.Vector3;
-    ray.closestPointToPoint(sphereCenter, distancevec)
-
-    const raymiddletomiddle = [];
-    raymiddletomiddle.push(distancevec, sphereCenter);
-
-    const sublinegeometry = new THREE.BufferGeometry().setFromPoints( raymiddletomiddle );
-    
-    const subline = new THREE.Line( sublinegeometry, material );
-
-    const raytotest = [];
-    raytotest.push( rayOrigin, rayDirection);
-    
-    const raygeometry = new THREE.BufferGeometry().setFromPoints( raytotest );
-    
-    const line = new THREE.Line( raygeometry, material );
-
-    //console.log(ray);
-    //console.log(distancevec)
-    
-  return distancevec.length < sphereRadius;
-  }
+     let rayOrigin = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], 0)
+     let rayDirVec = new THREE.Vector3(point[0], point[1], 0).normalize();
+     //console.log(rayOrigin);
+     //console.log(rayDirVec)
+     raycaster.set(rayOrigin,rayDirVec)
+      // console.log(this.obstacles)
+     this.obstacles.children.forEach((obj) => {
+      //  console.log(obj.geometry)
+      // console.log(raycaster.intersectObject(obj))
+      if(obj.geometry.type !== "CylinderGeometry") {
+        if (raycaster.intersectObject(obj).length > 0) {
+        //  console.log("raycast");
+          returnvalue = false;
+        }
+ 
+        if (
+          this.checkCollision(
+            rayOrigin,
+            rayDirVec,
+            obj.position,
+            obj.geometry.parameters.radius
+          )
+        ) {
+         // console.log("math collision");
+          returnvalue = false;
+        }
+ 
+        if (
+          obj.position.distanceTo(new THREE.Vector3(point[0], point[1], 0)) <
+          obj.geometry.parameters.radius
+        ) {
+        //  console.log("smaller");
+          returnvalue = false;
+        }
+      }
+     });
+ 
+     return returnvalue;
+   }
+   
+   checkCollision(rayOrigin, rayDirection, sphereCenter, sphereRadius) {
+ 
+     const material = new THREE.LineBasicMaterial({
+       color: 0x0000ff
+     });
+     const ray = new THREE.Ray(rayOrigin, rayDirection)
+ 
+     let distancevec = new THREE.Vector3;
+     ray.closestPointToPoint(sphereCenter, distancevec)
+ 
+     const raymiddletomiddle = [];
+     raymiddletomiddle.push(distancevec, sphereCenter);
+ 
+     const sublinegeometry = new THREE.BufferGeometry().setFromPoints( raymiddletomiddle );
+     
+     const subline = new THREE.Line( sublinegeometry, material );
+ 
+     const raytotest = [];
+     raytotest.push( rayOrigin, rayDirection);
+     
+     const raygeometry = new THREE.BufferGeometry().setFromPoints( raytotest );
+     
+     const line = new THREE.Line( raygeometry, material );
+ 
+     //console.log(ray);
+     //console.log(distancevec)
+     
+   return distancevec.length < sphereRadius;
+   }
 
   expand() {
     const randomPoint = this.generateRandomPoint();
     const nearestNode = this.findNearestNode(randomPoint);
     const newNode = this.generateNewNode(nearestNode, randomPoint);
-  
-    if (this.isCollisionFree(newNode, nearestNode)) {
+
+    if (this.isCollisionFree(newNode, nearestNode) === true) {
       const newNodeObj = new TreeNode(newNode, nearestNode);
-      console.log("distace: ",newNodeObj.distance)
       nearestNode.addChild(newNodeObj);
 
-      let distance = 0;
-      let helpernode = newNodeObj;
-      while(helpernode.parent != null) {
-          distance += this.calculateDistance(helpernode, helpernode.parent);
-          console.log(helpernode.distance, helpernode.parent.distance)
-          console.log(distance) //ERROR IN CALCULATE DISTACNE
-          helpernode = helpernode.parent;
-        
+      
+      newNodeObj.totalDistance = this.calculateTotalDistance(newNodeObj);
+      newNodeObj.distanceToParent = newNodeObj.distanceTo(newNodeObj.parent)
+      
+      this.tree.size++;
+      console.log("tree size: ",this.tree.size)
+      if(this.tree.size % 100 == 0) {
+        this.rewireAllNodes();
       }
-      newNodeObj.distance = distance;
-      console.log("newnode.distace: ",newNodeObj.distance)
-      const nearbyNodes = this.findNearbyNodes(newNodeObj, this.maxStepSize * 3);
-      this.rewire(newNodeObj, nearbyNodes);
+       
+
       return newNodeObj;
     }
   
     return null;
   }
 
+ 
+  rewireAllNodes() {
+    this.tree.traverseDFS(this.tree.root, (node) => {
+      let shortestDistance = node.totalDistance;
+      let closestNode = null;
+      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 3);
+  
+      
+      nearbyNodes.forEach((nearby) => {
+        const distance = nearby.totalDistance + nearby.distanceTo(node);
+  
+        if (distance < shortestDistance && !this.isCyclic(nearby, node)) {
+          shortestDistance = distance;
+          closestNode = nearby;
+        }
+      });
+  
+      if (closestNode) {
+        node.parent.removeChild(node);
+        node.parent = closestNode;
+        closestNode.addChild(node);
+        closestNode = null;
+      }
+    });
+  }
+  
+  isCyclic(node, target) {
+    const visited = new Set();
+  
+    const dfs = (current) => {
+      if (visited.has(current)) {
+        console.log("cycle")
+        return false; 
+      }
+  
+      if (current === target) {
+        return true;
+      }
+  
+      visited.add(current);
+  
+      for (const child of current.children) {
+        if (dfs(child)) {
+          return true;
+        }
+      }
+  
+      return false;
+    };
+  
+    return dfs(node);
+  }
+  
+
   findNearbyNodes(newNode, radius) {
     const nearbyNodes = [];
   
     this.tree.traverseDFS(this.tree.root, (node) => {
-      const distance = this.calculateDistance(node.value, newNode.value);
+      const distance = node.distanceTo(newNode)
       if (distance <= radius) {
         nearbyNodes.push(node);
       }
@@ -204,53 +255,12 @@ export class RRTStar {
     let currentNode = node;
   
     while (currentNode.parent !== null) {
-      totalDistance += this.calculateDistance(currentNode.value, currentNode.parent.value);
+      totalDistance += currentNode.distanceTo(currentNode.parent)
       currentNode = currentNode.parent;
     }
-  
     return totalDistance;
   }
   
-  
-  rewire(newNode) {
-    const totalDistance = this.calculateTotalDistance(newNode);
-    console.log(totalDistance)
-    console.log(newNode.distance)
-    if (totalDistance < newNode.distance) {
-      newNode.parent.removeChild(newNode);
-      newNode.distance = totalDistance;
-      this.updateDistanceRecursive(newNode.parent);
-      newNode.parent = null;
-      this.tree.root = newNode;
-      this.rewireRecursive(newNode);
-    }
-  }
-  
-  updateDistanceRecursive(node) {
-    let distance = 0;
-    let helperNode = node;
-    while (helperNode.parent !== null) {
-      distance += this.calculateDistance(helperNode.value, helperNode.parent.value);
-      helperNode = helperNode.parent;
-    }
-    node.distance = distance;
-    for (const child of node.children) {
-      this.updateDistanceRecursive(child);
-    }
-  }
-  
-  rewireRecursive(node) {
-    for (const child of node.children) {
-      const totalDistance = node.distance + this.calculateDistance(node.value, child.value);
-      if (totalDistance < child.distance) {
-        child.parent.removeChild(child);
-        child.parent = node;
-        child.distance = totalDistance;
-        node.addChild(child);
-        this.rewireRecursive(child);
-      }
-    }
-  }
   
   findPath() {
     let path = [];
@@ -261,37 +271,45 @@ export class RRTStar {
       const newNode = this.expand();
       if (newNode) {
         path.push(newNode);
-        //console.log(newNode.value)
         if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
           path.push(this.goal);
           foundGoal = true;
           this.goalnode = newNode;
-       //   console.log(newNode)
+          
         }
       }
     }
-
-    console.log(path)
-
+ 
     return path;
   }
 
-  visualize() {
-    console.log("lets go")
+  addNodes(count) {
+    for (let i = 0; i < count; i++) {
+      const newNode = this.expand();
+      if (newNode) {
+        if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
+          newNode.addChild(this.goalnode);
+          this.goalnode.parent = newNode;
+          return true; 
+        }
+      }
+    }
+    this.visualize()
+    return false
+  }
 
+  visualize() {
+    this.rewireAllNodes();
           this.obstacles.children.forEach(obj => {
             obj.position.set(obj.position.x , obj.position.z , obj.position.y)
           })
           
     
         this.canvas.rotation.x = (Math.PI/2)
-    //ADD A visulisation from the goal node to the root node
-    //ALSO add line from last node to goal
-    //think about turning this into 3d
-    //make a RRT* (path optimization)
+
     this.findPath();
-    // Create material for the tree edges
-    const treeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    
+    const treeMaterial = new THREE.LineBasicMaterial({ color: 0x0fffff });
 
     this.tree.traverseDFS(this.tree.root, (node) => {
       for (const child of node.children) {
@@ -337,11 +355,11 @@ export class RRTStar {
       goalnode = goalnode.parent;
     }
 
+    points.push(new THREE.Vector3(this.tree.root.value[0], this.tree.root.value[1]))
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0xff0ff0 });
     const edgeGeometry = new THREE.BufferGeometry();
     edgeGeometry.setFromPoints(points);
     const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
     this.canvas.add(edgeLine);
-    console.log(this.canvas)
-  }
+    }
 }

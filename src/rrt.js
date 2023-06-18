@@ -241,7 +241,8 @@ export class RRT {
       points.push(new THREE.Vector3(goalnode.value[0], goalnode.value[1]));
       goalnode = goalnode.parent;
     }
-
+    
+    points.push(new THREE.Vector3(this.tree.root.value[0], this.tree.root.value[1]))
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
     const edgeGeometry = new THREE.BufferGeometry();
     edgeGeometry.setFromPoints(points);

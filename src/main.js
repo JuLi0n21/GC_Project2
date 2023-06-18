@@ -217,12 +217,13 @@ function init() {
   const maxStepCount = 1000;
   const range = 6;
  
-//  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
-  //rrt.visulize();
+  rrt.visulize();
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
+  rrt.findPath();
   rrtstar.visualize();
   console.log("Startign RRT")
   
