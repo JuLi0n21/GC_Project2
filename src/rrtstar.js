@@ -172,29 +172,27 @@ export class RRTStar {
       
       this.tree.size++;
       console.log("tree size: ",this.tree.size)
-      if(this.tree.size % 100 == 0) {
-        this.rewireAllNodes();
+      if(this.tree.size % 10 == 0) {
+       this.rewireAllNodes();
       }
-       
 
       return newNodeObj;
     }
   
     return null;
   }
-
  
   rewireAllNodes() {
     this.tree.traverseDFS(this.tree.root, (node) => {
       let shortestDistance = node.totalDistance;
       let closestNode = null;
-      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 3);
+      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 5);
   
       
       nearbyNodes.forEach((nearby) => {
         const distance = nearby.totalDistance + nearby.distanceTo(node);
   
-        if (distance < shortestDistance && !this.isCyclic(nearby, node)) {
+        if (distance < shortestDistance && !this.isCyclic(nearby, node) && !this.closestPointToCircle(nearby, node)) {
           shortestDistance = distance;
           closestNode = nearby;
         }
@@ -214,7 +212,7 @@ export class RRTStar {
   
     const dfs = (current) => {
       if (visited.has(current)) {
-        console.log("cycle")
+        console.warn("cycle")
         return false; 
       }
   
@@ -235,6 +233,40 @@ export class RRTStar {
   
     return dfs(node);
   }
+  
+  closestPointToCircle(originnode, goalnode) {
+    let x1 = originnode.value[0];
+    let y1 = originnode.value[1];
+    let x2 = goalnode.value[0];
+    let y2 = goalnode.value[1];
+    
+    let intersectsObstacle = false;
+  
+    this.obstacles.children.forEach((obj) => {
+      let x0 = obj.position.x;
+      let y0 = obj.position.y;
+      let r = obj.geometry.parameters.radius;
+      
+      const d = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+      const u = { x: (x2 - x1) / d, y: (y2 - y1) / d };
+      const v = { x: x1 - x0, y: y1 - y0 };
+      const dotProduct = u.x * v.x + u.y * v.y;
+      const C = { x: x0 + dotProduct * u.x, y: y0 + dotProduct * u.y };
+      const distance = Math.sqrt((C.x - x0) ** 2 + (C.y - y0) ** 2);
+    
+      if (distance <= r) {
+        intersectsObstacle = true;
+      } else {
+     //   console.log(x0, y0, r, distance);
+        //goalnode.value[0] = C.x;
+        //goalnode.value[1] = C.y;
+        //goalnode.totalDistance = this.calculateTotalDistance(goalnode)
+      }
+    });
+  
+    return intersectsObstacle;
+  }
+  
   
 
   findNearbyNodes(newNode, radius) {
@@ -275,7 +307,7 @@ export class RRTStar {
           path.push(this.goal);
           foundGoal = true;
           this.goalnode = newNode;
-          
+          this.rewireAllNodes();
         }
       }
     }
