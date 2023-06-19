@@ -219,14 +219,18 @@ function init() {
  
   const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
-  rrt.visulize();
+  //rrt.visulize();
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
   rrt.findPath();
   rrtstar.visualize();
-  console.log("Startign RRT")
+
+  console.log("1")
+  // rrtstar.addNodes(1)
   
+  
+
   scene.add(rrtcanvas);
  
 }

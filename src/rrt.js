@@ -160,6 +160,16 @@ export class RRT {
     return null;
   }
 
+  addNodes(count) {
+    for (let i = 0; i < count; i++) {
+      const newNode = this.expand();
+      if (newNode) {
+      }
+    }
+    this.visualize()
+    return false
+  }
+
   findPath() {
     let path = [];
     let foundGoal = false;
@@ -194,7 +204,9 @@ export class RRT {
     //ALSO add line from last node to goal
     //think about turning this into 3d
     //make a RRT* (path optimization)
+    if(this.path !== null) {
     this.findPath();
+    }
     // Create material for the tree edges
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
 

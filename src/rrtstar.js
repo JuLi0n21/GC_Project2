@@ -172,9 +172,7 @@ export class RRTStar {
       
       this.tree.size++;
       console.log("tree size: ",this.tree.size)
-      if(this.tree.size % 10 == 0) {
        this.rewireAllNodes();
-      }
 
       return newNodeObj;
     }
@@ -184,16 +182,18 @@ export class RRTStar {
  
   rewireAllNodes() {
     this.tree.traverseDFS(this.tree.root, (node) => {
+    //  console.log(node.id)
       let shortestDistance = node.totalDistance;
       let closestNode = null;
-      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 5);
+      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 3);
   
       
       nearbyNodes.forEach((nearby) => {
         const distance = nearby.totalDistance + nearby.distanceTo(node);
   
-        if (distance < shortestDistance && !this.isCyclic(nearby, node) && !this.closestPointToCircle(nearby, node)) {
-          shortestDistance = distance;
+        if (distance < shortestDistance && !this.createsCycle(node, nearby) && !this.closestPointToCircle(nearby, node)) {
+          //console.log(nearby.id)
+          shortestDistance = nearby.totalDistance + nearby.distanceTo(node);
           closestNode = nearby;
         }
       });
@@ -209,7 +209,7 @@ export class RRTStar {
   
   isCyclic(node, target) {
     const visited = new Set();
-  
+    console.log("überprüfe:", node.id);
     const dfs = (current) => {
       if (visited.has(current)) {
         console.warn("cycle")
@@ -234,37 +234,78 @@ export class RRTStar {
     return dfs(node);
   }
   
+  createsCycle(node, potentialParent) {
+    const visited = new Set();
+    
+    const dfs = (current) => {
+      if (visited.has(current)) {
+        return false; // Cycle detected
+      }
+  
+      if (current === potentialParent) {
+        return true; // Found the potential parent, creating a cycle
+      }
+  
+      visited.add(current);
+  
+      for (const child of current.children) {
+        if (dfs(child)) {
+          return true; // Cycle detected
+        }
+      }
+  
+      return false;
+    };
+  
+    return dfs(node);
+  }
+  
+
   closestPointToCircle(originnode, goalnode) {
     let x1 = originnode.value[0];
     let y1 = originnode.value[1];
     let x2 = goalnode.value[0];
     let y2 = goalnode.value[1];
     
-    let intersectsObstacle = false;
+    let returnvalue = false;
   
     this.obstacles.children.forEach((obj) => {
-      let x0 = obj.position.x;
-      let y0 = obj.position.y;
-      let r = obj.geometry.parameters.radius;
+
+      if(obj.geometry.type !== "CylinderGeometry") {
+      let cx = obj.position.x;
+      let cy = obj.position.y;
+      //console.log(obj.geometry.type)
+      let r = obj.geometry.parameters.radius + 0.02;
       
-      const d = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-      const u = { x: (x2 - x1) / d, y: (y2 - y1) / d };
-      const v = { x: x1 - x0, y: y1 - y0 };
-      const dotProduct = u.x * v.x + u.y * v.y;
-      const C = { x: x0 + dotProduct * u.x, y: y0 + dotProduct * u.y };
-      const distance = Math.sqrt((C.x - x0) ** 2 + (C.y - y0) ** 2);
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const fx = x1 - cx;
+      const fy = y1 - cy;
+      
+      const a = dx * dx + dy * dy;
+      const b = 2 * (fx * dx + fy * dy);
+      const c = fx * fx + fy * fy - r * r;
+      
+      const discriminant = b * b - 4 * a * c;
     
-      if (distance <= r) {
-        intersectsObstacle = true;
+      if (discriminant < 0) {
+        //returnvalue = false; // No intersection
+      //  console.log(discriminant);
+      } else if (discriminant === 0) {
+        const t = -b / (2*a);
+        goalnode.value[0] = x1 + t * dx;
+        goalnode.value[1] = y1 + t * dy;
+
+        console.log(x1,"->", goalnode.value[0])
+        console.log(y1,"->", goalnode.value[1])
+        returnvalue = true; // Tangent to the circle
       } else {
-     //   console.log(x0, y0, r, distance);
-        //goalnode.value[0] = C.x;
-        //goalnode.value[1] = C.y;
-        //goalnode.totalDistance = this.calculateTotalDistance(goalnode)
-      }
-    });
-  
-    return intersectsObstacle;
+      //  console.log(cx,cy,r)
+        returnvalue = true; // Intersects the circle at two points
+      } 
+    }
+    })
+    return returnvalue;
   }
   
   
@@ -307,7 +348,7 @@ export class RRTStar {
           path.push(this.goal);
           foundGoal = true;
           this.goalnode = newNode;
-          this.rewireAllNodes();
+          //this.rewireAllNodes();
         }
       }
     }
@@ -316,20 +357,17 @@ export class RRTStar {
   }
 
   addNodes(count) {
+    this.canvas = new THREE.Group;
     for (let i = 0; i < count; i++) {
       const newNode = this.expand();
       if (newNode) {
-        if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
-          newNode.addChild(this.goalnode);
-          this.goalnode.parent = newNode;
-          return true; 
+          
         }
       }
-    }
+    
     this.visualize()
     return false
   }
-
   visualize() {
     this.rewireAllNodes();
           this.obstacles.children.forEach(obj => {
@@ -339,7 +377,9 @@ export class RRTStar {
     
         this.canvas.rotation.x = (Math.PI/2)
 
-    this.findPath();
+        if(this.goalnode !== null) {
+          this.findPath();
+          }
     
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0x0fffff });
 

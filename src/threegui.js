@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { RRT } from './rrt';
 import { RRTStar } from './rrtstar';
 
+let currentshit;
 const raycaster = new THREE.Raycaster
 const objsToTest = []
 let selectState = false;
@@ -107,6 +108,10 @@ export function algoGUI(scene, obsticals) {
     
     }
 
+    function addpoints( ) {
+        currentshit.addNodes(20);
+    }
+
     function renderalgo( id ) {
         
         scene.remove(rrtcanvas);
@@ -129,15 +134,15 @@ export function algoGUI(scene, obsticals) {
             scene.add(rrtcanvas);
         }
 
-        if(id == 1) {
+        if(id == 2) {
             const start = [1, 1];
             const goal = [2, -2];
-            const maxStepSize = 0.1;
+            const maxStepSize = 0.2;
             const maxStepCount = 1000;
             const range = 6;
            
             const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
-            
+            currentshit = rrtstar;
             rrtstar.visualize();
             console.log("Startign RRT")
             
@@ -214,7 +219,7 @@ export function algoGUI(scene, obsticals) {
             new ThreeMeshUI.Text( { content: 'next' } )
         );  
         buttonPrevious.add(
-            new ThreeMeshUI.Text( { content: 'previous' } )
+            new ThreeMeshUI.Text( { content: 'addNodes' } )
         );   
 
         buttonRender.add(
@@ -246,10 +251,17 @@ export function algoGUI(scene, obsticals) {
             attributes: selectedAttributes,
             onSet: () => {
     
-                currentMesh -= 1;
+               /* currentMesh -= 1;
                 if ( currentMesh < 0 ) currentMesh = 2;
                 showMesh( currentMesh );
-    
+                */
+               if(currentshit) {
+                
+                rrtcanvas.clear();
+                addpoints();
+
+               }
+
             }
         } );
         buttonPrevious.setupState( hoveredStateAttributes );
@@ -260,7 +272,7 @@ export function algoGUI(scene, obsticals) {
             attributes: selectedAttributes,
             onSet: () => {
     
-               renderalgo(1);
+               renderalgo(currentMesh);
     
             }
         } );
