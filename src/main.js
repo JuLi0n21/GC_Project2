@@ -223,13 +223,16 @@ function init() {
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
-  rrt.findPath();
-  rrtstar.visualize();
+
+ 
 
   console.log("1")
-  // rrtstar.addNodes(1)
   
+ // rrtstar.findPath();
+
+ // rrtstar.addNodes(100)
   
+ // rrtstar.visualize();
 
   scene.add(rrtcanvas);
  

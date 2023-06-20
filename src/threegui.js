@@ -110,6 +110,7 @@ export function algoGUI(scene, obsticals) {
 
     function addpoints( ) {
         currentshit.addNodes(20);
+       
     }
 
     function renderalgo( id ) {
@@ -259,7 +260,7 @@ export function algoGUI(scene, obsticals) {
                 
                 rrtcanvas.clear();
                 addpoints();
-
+                
                }
 
             }

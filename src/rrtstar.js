@@ -21,7 +21,7 @@ export class RRTStar {
     this.canvas = canvas;
     this.maxStepCount = maxStepCount;
     this.count = 0;
-    this.goalnode = new TreeNode;
+    this.goalnode = new TreeNode( [ goal[0], goal[1] ]);
 
     this.tree = new Tree(  [ start[0], start[1] ] );
     
@@ -185,7 +185,7 @@ export class RRTStar {
     //  console.log(node.id)
       let shortestDistance = node.totalDistance;
       let closestNode = null;
-      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 3);
+      const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 5);
   
       
       nearbyNodes.forEach((nearby) => {
@@ -338,7 +338,7 @@ export class RRTStar {
   findPath() {
     let path = [];
     let foundGoal = false;
-
+  
     while (!foundGoal && this.maxStepCount > this.count) {
       this.count++;
       const newNode = this.expand();
@@ -347,8 +347,8 @@ export class RRTStar {
         if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
           path.push(this.goal);
           foundGoal = true;
-          this.goalnode = newNode;
-          //this.rewireAllNodes();
+          this.goalnode.parent = newNode;
+          this.rewireAllNodes();
         }
       }
     }
@@ -357,29 +357,33 @@ export class RRTStar {
   }
 
   addNodes(count) {
-    this.canvas = new THREE.Group;
-    for (let i = 0; i < count; i++) {
-      const newNode = this.expand();
-      if (newNode) {
-          
+    
+  
+    for(let i = 0; i < count; i++) {
+
+    const newNode = this.expand()
+     
+     if(newNode) {
+      if (this.calculateDistance(newNode.value, this.goal) <= this.maxStepSize) {
+        
+        this.goalnode.parent = newNode;
+        this.rewireAllNodes();
         }
       }
-    
-    this.visualize()
-    return false
+    }
+  
+    this.visualize();
   }
+
   visualize() {
+    this.canvas.clear();
     this.rewireAllNodes();
+    console.log("what");
           this.obstacles.children.forEach(obj => {
             obj.position.set(obj.position.x , obj.position.z , obj.position.y)
           })
           
-    
         this.canvas.rotation.x = (Math.PI/2)
-
-        if(this.goalnode !== null) {
-          this.findPath();
-          }
     
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0x0fffff });
 
@@ -433,5 +437,7 @@ export class RRTStar {
     edgeGeometry.setFromPoints(points);
     const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
     this.canvas.add(edgeLine);
+    console.log(this.calculateTotalDistance(this.goalnode))
     }
+
 }
