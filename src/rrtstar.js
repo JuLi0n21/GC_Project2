@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { Tree, TreeNode } from "./tree";
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
 /*
 create newNode -> search nearest node -> check for coolsions -> set it as parent 
@@ -21,10 +23,18 @@ export class RRTStar {
     this.canvas = canvas;
     this.maxStepCount = maxStepCount;
     this.count = 0;
-    this.goalnode = new TreeNode( [ goal[0], goal[1] ]);
-
     this.tree = new Tree(  [ start[0], start[1] ] );
-    
+    this.goalnode = new TreeNode( [ goal[0], goal[1] ]);
+    console.log(this.tree.root)
+    this.loader = new FontLoader();
+    if(this.obstacles.userData.rotated == undefined)
+      this.obstacles.userData.rotated = true;
+      this.obstacles.children.forEach(obj => {
+            obj.position.set(obj.position.x , obj.position.z , obj.position.y)
+          })
+
+    console.log(this.tree);
+
   }
 
   generateRandomPoint() {
@@ -79,90 +89,15 @@ export class RRTStar {
     return newNode;
   }
 
-  isCollisionFree(point, nearestNode) {
-
-    // console.log(point)
-     let raycaster = new THREE.Raycaster;
-     let returnvalue = true;
-     if (!this.obstacles.children) {
-       returnvalue = true;
-     }
-     let rayOrigin = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], 0)
-     let rayDirVec = new THREE.Vector3(point[0], point[1], 0).normalize();
-     //console.log(rayOrigin);
-     //console.log(rayDirVec)
-     raycaster.set(rayOrigin,rayDirVec)
-      // console.log(this.obstacles)
-     this.obstacles.children.forEach((obj) => {
-      //  console.log(obj.geometry)
-      // console.log(raycaster.intersectObject(obj))
-      if(obj.geometry.type !== "CylinderGeometry") {
-        if (raycaster.intersectObject(obj).length > 0) {
-        //  console.log("raycast");
-          returnvalue = false;
-        }
- 
-        if (
-          this.checkCollision(
-            rayOrigin,
-            rayDirVec,
-            obj.position,
-            obj.geometry.parameters.radius
-          )
-        ) {
-         // console.log("math collision");
-          returnvalue = false;
-        }
- 
-        if (
-          obj.position.distanceTo(new THREE.Vector3(point[0], point[1], 0)) <
-          obj.geometry.parameters.radius
-        ) {
-        //  console.log("smaller");
-          returnvalue = false;
-        }
-      }
-     });
- 
-     return returnvalue;
-   }
-   
-   checkCollision(rayOrigin, rayDirection, sphereCenter, sphereRadius) {
- 
-     const material = new THREE.LineBasicMaterial({
-       color: 0x0000ff
-     });
-     const ray = new THREE.Ray(rayOrigin, rayDirection)
- 
-     let distancevec = new THREE.Vector3;
-     ray.closestPointToPoint(sphereCenter, distancevec)
- 
-     const raymiddletomiddle = [];
-     raymiddletomiddle.push(distancevec, sphereCenter);
- 
-     const sublinegeometry = new THREE.BufferGeometry().setFromPoints( raymiddletomiddle );
-     
-     const subline = new THREE.Line( sublinegeometry, material );
- 
-     const raytotest = [];
-     raytotest.push( rayOrigin, rayDirection);
-     
-     const raygeometry = new THREE.BufferGeometry().setFromPoints( raytotest );
-     
-     const line = new THREE.Line( raygeometry, material );
- 
-     //console.log(ray);
-     //console.log(distancevec)
-     
-   return distancevec.length < sphereRadius;
-   }
 
   expand() {
+
     const randomPoint = this.generateRandomPoint();
     const nearestNode = this.findNearestNode(randomPoint);
     const newNode = this.generateNewNode(nearestNode, randomPoint);
 
-    if (this.isCollisionFree(newNode, nearestNode) === true) {
+    if (this.intersectionFree(newNode, nearestNode) === true) {
+
       const newNodeObj = new TreeNode(newNode, nearestNode);
       nearestNode.addChild(newNodeObj);
 
@@ -170,6 +105,7 @@ export class RRTStar {
       newNodeObj.totalDistance = this.calculateTotalDistance(newNodeObj);
       newNodeObj.distanceToParent = newNodeObj.distanceTo(newNodeObj.parent)
       
+      console.log(newNodeObj.totalDistance)
       this.tree.size++;
       console.log("tree size: ",this.tree.size)
        this.rewireAllNodes();
@@ -182,7 +118,7 @@ export class RRTStar {
  
   rewireAllNodes() {
     this.tree.traverseDFS(this.tree.root, (node) => {
-    //  console.log(node.id)
+      
       let shortestDistance = node.totalDistance;
       let closestNode = null;
       const nearbyNodes = this.findNearbyNodes(node, this.maxStepSize * 5);
@@ -191,9 +127,10 @@ export class RRTStar {
       nearbyNodes.forEach((nearby) => {
         const distance = nearby.totalDistance + nearby.distanceTo(node);
   
-        if (distance < shortestDistance && !this.createsCycle(node, nearby) && !this.closestPointToCircle(nearby, node)) {
-          //console.log(nearby.id)
-          shortestDistance = nearby.totalDistance + nearby.distanceTo(node);
+      //  console.log("boefore short",distance)
+        if (distance < shortestDistance && !this.createsCycle(node, nearby) && this.intersectionFree(nearby, node)) {
+          shortestDistance = this.calculateTotalDistance(nearby) + nearby.distanceTo(node);
+        //  console.log("after short",shortestDistance)
           closestNode = nearby;
         }
       });
@@ -260,55 +197,89 @@ export class RRTStar {
     return dfs(node);
   }
   
+  findClosestPoint(x1, y1, x2, y2, x3, y3) {
+    // Create the three points as Vector3 objects
+    const point1 = new THREE.Vector3(x1, y1, 0);
+    const point2 = new THREE.Vector3(x2, y2, 0);
+    const point3 = new THREE.Vector3(x3, y3, 0);
+  
+    // Calculate the distances from the third point to the two given points
+    const distanceToP1 = point3.distanceTo(point1);
+    const distanceToP2 = point3.distanceTo(point2);
+  
+    // Determine the closest point
+    let closestPoint;
+    if (distanceToP1 < distanceToP2) {
+      closestPoint = point1;
+    } else {
+      closestPoint = point2;
+    }
+  
+    return closestPoint;
+  }
 
-  closestPointToCircle(originnode, goalnode) {
-    let x1 = originnode.value[0];
-    let y1 = originnode.value[1];
+  intersectionFree(originnode, goalnode) {
+
+    let green = "#a103fc";
+    let yellow = "#fcd703";
+    let red = "#fc2003";
+    let bule = "#1403fc";
+    let purple = "#9403fc";
+    let black = "#000000";
+    let x1;
+    let y1;
+    let distance = 0;
+    if(originnode.id == undefined) {
+      x1 = originnode[0];
+      y1 = originnode[1];
+      console.log("point")
+    } else {
+      console.log("node")
+      x1 = originnode.value[0];
+      y1 = originnode.value[1];
+    }
     let x2 = goalnode.value[0];
     let y2 = goalnode.value[1];
-    
-    let returnvalue = false;
+    let returnvalue = true;
+
+
+  
+   // this.linehelper(x1,y1,x2,y2,distance.toString(),red)
+  
+    let intersectionCount = 0;
+    let intersectionPoint = null;
   
     this.obstacles.children.forEach((obj) => {
+      if (obj.geometry.type !== "CylinderGeometry") {
 
-      if(obj.geometry.type !== "CylinderGeometry") {
-      let cx = obj.position.x;
-      let cy = obj.position.y;
-      //console.log(obj.geometry.type)
-      let r = obj.geometry.parameters.radius + 0.02;
-      
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const fx = x1 - cx;
-      const fy = y1 - cy;
-      
-      const a = dx * dx + dy * dy;
-      const b = 2 * (fx * dx + fy * dy);
-      const c = fx * fx + fy * fy - r * r;
-      
-      const discriminant = b * b - 4 * a * c;
-    
-      if (discriminant < 0) {
-        //returnvalue = false; // No intersection
-      //  console.log(discriminant);
-      } else if (discriminant === 0) {
-        const t = -b / (2*a);
-        goalnode.value[0] = x1 + t * dx;
-        goalnode.value[1] = y1 + t * dy;
+        let cx = obj.position.x;
+        let cy = obj.position.y;
+        let r = obj.geometry.parameters.radius;
 
-        console.log(x1,"->", goalnode.value[0])
-        console.log(y1,"->", goalnode.value[1])
-        returnvalue = true; // Tangent to the circle
-      } else {
-      //  console.log(cx,cy,r)
-        returnvalue = true; // Intersects the circle at two points
-      } 
-    }
+        let closestPoint = this.findClosestPoint(x1,y1,x2,y2,cx,cy)
+
+        let closestdistance = new THREE.Vector3(x1,y1,0).distanceTo(new THREE.Vector3(cx,cy,0))
+        console.log(x1,y1, "-", x2,y2, "-", closestPoint)
+          if(closestdistance < r){
+            this.linehelper(x1,y1,cx,cy, null, red)
+            returnvalue = false;
+          } else {
+            this.linehelper(x1,y1,cx,cy,null, bule)
+        }
+
+        closestdistance = new THREE.Vector3(x2,y2,0).distanceTo(new THREE.Vector3(cx,cy,0))
+        console.log(x1,y1, "-", x2,y2, "-", closestPoint)
+          if(closestdistance < r){
+            this.linehelper(x1,y1,cx,cy, null, red)
+            returnvalue = false;
+          } else {
+            this.linehelper(x1,y1,cx,cy,null, bule)
+        }
+       
+      }
     })
     return returnvalue;
   }
-  
-  
 
   findNearbyNodes(newNode, radius) {
     const nearbyNodes = [];
@@ -376,13 +347,12 @@ export class RRTStar {
   }
 
   visualize() {
+    console.log(this.tree)
     this.canvas.clear();
     this.rewireAllNodes();
     console.log("what");
-          this.obstacles.children.forEach(obj => {
-            obj.position.set(obj.position.x , obj.position.z , obj.position.y)
-          })
-          
+    
+ 
         this.canvas.rotation.x = (Math.PI/2)
     
     const treeMaterial = new THREE.LineBasicMaterial({ color: 0x0fffff });
@@ -424,6 +394,48 @@ export class RRTStar {
     this.drawGoalPath(this.goalnode);
   }
 
+  linehelper(x1,y1,x2,y2,text = null,Color = "#ffffff") {
+    const points = [];
+    let height = -0.1;
+    points.push(new THREE.Vector3(x1,y1,height))
+    points.push(new THREE.Vector3(x2,y2,height))
+    const treeMaterial = new THREE.LineBasicMaterial({ color: Color });
+    const edgeGeometry = new THREE.BufferGeometry();
+    edgeGeometry.setFromPoints(points);
+    const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
+    this.canvas.add(edgeLine);
+
+    const canvas = this.canvas;
+
+    let textMesh =  new THREE.Mesh();
+
+
+
+     if(text !== null) {
+				this.loader.load( 'assests/fonts/helvetiker_regular.typeface.json', function ( font ) {
+					
+        const textGeometry = new TextGeometry( text, {
+	      
+        font: font,
+		    size: 0.01,
+		    height: 0.01,
+		    curveSegments: 5,
+
+      } );
+     
+      console.log("creating text")
+      const midpoint = new THREE.Vector3().addVectors(new THREE.Vector3(x1,y1,height), new THREE.Vector3(x2,y2,height)).multiplyScalar(0.5);
+      //console.log(midpoint)
+      textMesh = new THREE.Mesh(textGeometry, treeMaterial);
+      textMesh.position.copy(midpoint);
+      canvas.add(textMesh)
+      console.warn(canvas);
+    } );
+      
+  }
+  
+  }
+
   drawGoalPath(goalnode) {
     const points = [];
     while (goalnode.parent != null) {
@@ -437,7 +449,47 @@ export class RRTStar {
     edgeGeometry.setFromPoints(points);
     const edgeLine = new THREE.Line(edgeGeometry, treeMaterial);
     this.canvas.add(edgeLine);
-    console.log(this.calculateTotalDistance(this.goalnode))
-    }
+    //console.log(this.calculateTotalDistance(this.goalnode))
+    this.linehelper(-3,3,3,-3,"edge");  
+
+    this.dumbassfunction();
+  }
+
+  dumbassfunction() {
+    // Assuming you have a Three.js scene and renderer set up
+
+// Create the first line
+
+// Create the line segment
+const startPoint = new THREE.Vector3(0, 0, 0);
+const endPoint = new THREE.Vector3(3, 4, 0);
+const lineGeometry = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);
+const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+const line = new THREE.Line(lineGeometry, lineMaterial);
+this.canvas.add(line);
+
+// Define the length you want to remove
+const lengthToRemove = 3;
+
+// Calculate the direction vector of the line
+const direction = new THREE.Vector3().subVectors(endPoint, startPoint).normalize();
+
+// Calculate the new endpoint by subtracting the direction vector multiplied by the length to remove
+const newEndPoint = endPoint.clone().sub(direction.clone().multiplyScalar(lengthToRemove));
+
+// Update the line geometry with the new endpoint
+line.geometry.setFromPoints([startPoint, newEndPoint]);
+line.geometry.attributes.position.needsUpdate = true;
+
+
+const lineGeometry2 = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);
+const lineMaterial2 = new THREE.LineBasicMaterial({ color: 0xffffff });
+const line2 = new THREE.Line(lineGeometry2, lineMaterial2);
+this.canvas.add(line2);
+
+line2.position.x = 2;
+
+
+  }
 
 }

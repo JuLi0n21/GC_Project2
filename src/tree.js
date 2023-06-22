@@ -1,11 +1,14 @@
+let i = 0;
+
 export class TreeNode {
   constructor(value, parent = null) {
-    this.id = Math.round(Math.random() * 1000000);
+    this.id = i++;
     this.value = value;
     this.children = [];
     this.parent = parent;
     this.distanceToParent = 0;
-    this.totaldistance = 0;
+    this.totalDistance = 0;
+   // console.log(this.id);
   }
 
   addChild(node) {
@@ -49,34 +52,23 @@ export class TreeNode {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  clone() {
-    const clonedNode = new TreeNode(this.value, this.parent);
-    clonedNode.id = this.id;
-    clonedNode.distanceToParent = this.distanceToParent;
-    clonedNode.totaldistance = this.totaldistance;
-
-   // console.warn(this.children)
-    for (const child of this.children) {
-      const clonedChild = child.clone();
-      clonedNode.addChild(clonedChild);
-    }
-
-    return clonedNode;
-  }
 }
 
 export class Tree {
   constructor(rootValue) {
     this.root = new TreeNode(rootValue);
     this.size = 1;
+    this.root.totalDistance = 0;
   }
 
   traverseDFS(root, callback) {
+   
     const stack = [];
     stack.push(root);
 
     while (stack.length > 0) {
       const node = stack.pop();
+      //console.log(node.id)
       callback(node);
 
       for (const child of node.children) {
@@ -110,24 +102,4 @@ export class Tree {
     return foundNode;
   }
 
-  clone() {
-    const clonedTree = new Tree(this.root.value);
-    const visitedNodes = new Map();
-
-    this.traverseBFS((node) => {
-      const clonedNode = visitedNodes.get(node) || node.clone();
-      visitedNodes.set(node, clonedNode);
-
-      const parentNode = node.getParent();
-      if (parentNode) {
-        const clonedParentNode = visitedNodes.get(parentNode);
-        clonedParentNode.addChild(clonedNode);
-      } else {
-        clonedTree.root = clonedNode;
-      }
-    });
-
-    clonedTree.size = this.size;
-    return clonedTree;
-  }
 }
