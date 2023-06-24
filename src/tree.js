@@ -1,21 +1,20 @@
+import * as THREE from "three";
 let i = 0;
 
 export class TreeNode {
   constructor(value, parent = null) {
     this.id = i++;
-    this.value = value;
+    this.value = value
     this.children = [];
     this.parent = parent;
     this.distanceToParent = 0;
     this.totalDistance = 0;
-   // console.log(this.id);
   }
 
   addChild(node) {
     node.parent = this;
-   // console.warn("child",node)
+
     this.children.push(node);
-   // console.log(this.children)
   }
 
   removeChild(node) {
@@ -40,10 +39,11 @@ export class TreeNode {
     return this.parent;
   }
 
-  distanceTo(Node) {
-    const dx = Node.value[0] - this.value[0];
-    const dy = Node.value[1] - this.value[1];
-    return Math.sqrt(dx * dx + dy * dy);
+  distanceTo(node) {
+    const dx = node.value[0] - this.value[0];
+    const dy = node.value[1] - this.value[1];
+    const dz = node.value[2] - this.value[2];
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
   euclideanDistance(nodeA, nodeB) {
@@ -68,7 +68,6 @@ export class Tree {
 
     while (stack.length > 0) {
       const node = stack.pop();
-      //console.log(node.id)
       callback(node);
 
       for (const child of node.children) {

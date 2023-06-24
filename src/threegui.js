@@ -121,16 +121,17 @@ export function algoGUI(scene, obsticals) {
         
 
         if(id == 1) {
-            const start = [1, 1];
-            const goal = [2, -2];
-            const maxStepSize = 0.1;
-            const maxStepCount = 10000;
+            const start = [-1, 2, 3];
+            const goal = [-2, 2, 0];
+            const maxStepSize = 0.2;
+            const maxStepCount = 1000;
             const range = 6;
            
             const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
             
-            rrt.visulize();
-            console.log("Startign RRT")
+           // rrt.visulize();
+           rrt.addNodes(100); 
+           console.log("Startign RRT")
             
             scene.add(rrtcanvas);
         }

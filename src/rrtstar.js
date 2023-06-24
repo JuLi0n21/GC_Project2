@@ -25,15 +25,7 @@ export class RRTStar {
     this.count = 0;
     this.tree = new Tree(  [ start[0], start[1] ] );
     this.goalnode = new TreeNode( [ goal[0], goal[1] ]);
-    console.log(this.tree.root)
     this.loader = new FontLoader();
-    if(this.obstacles.userData.rotated == undefined)
-      this.obstacles.userData.rotated = true;
-      this.obstacles.children.forEach(obj => {
-            obj.position.set(obj.position.x , obj.position.z , obj.position.y)
-          })
-
-    console.log(this.tree);
 
   }
 
@@ -96,7 +88,7 @@ export class RRTStar {
     const nearestNode = this.findNearestNode(randomPoint);
     const newNode = this.generateNewNode(nearestNode, randomPoint);
 
-    if (this.intersectionFree(newNode, nearestNode) === true) {
+    if (this.intersectionFree(newNode, nearestNode)) {
 
       const newNodeObj = new TreeNode(newNode, nearestNode);
       nearestNode.addChild(newNodeObj);
@@ -128,7 +120,7 @@ export class RRTStar {
         const distance = nearby.totalDistance + nearby.distanceTo(node);
   
       //  console.log("boefore short",distance)
-        if (distance < shortestDistance && !this.createsCycle(node, nearby) && this.intersectionFree(nearby, node)) {
+        if (distance < shortestDistance && !this.createsCycle(node, nearby)) {
           shortestDistance = this.calculateTotalDistance(nearby) + nearby.distanceTo(node);
         //  console.log("after short",shortestDistance)
           closestNode = nearby;
@@ -146,7 +138,7 @@ export class RRTStar {
   
   isCyclic(node, target) {
     const visited = new Set();
-    console.log("überprüfe:", node.id);
+    //console.log("überprüfe:", node.id);
     const dfs = (current) => {
       if (visited.has(current)) {
         console.warn("cycle")
@@ -259,7 +251,7 @@ export class RRTStar {
         let closestPoint = this.findClosestPoint(x1,y1,x2,y2,cx,cy)
 
         let closestdistance = new THREE.Vector3(x1,y1,0).distanceTo(new THREE.Vector3(cx,cy,0))
-        console.log(x1,y1, "-", x2,y2, "-", closestPoint)
+       // console.log(x1,y1, "-", x2,y2, "-", closestPoint)
           if(closestdistance < r){
             this.linehelper(x1,y1,cx,cy, null, red)
             returnvalue = false;
@@ -268,7 +260,7 @@ export class RRTStar {
         }
 
         closestdistance = new THREE.Vector3(x2,y2,0).distanceTo(new THREE.Vector3(cx,cy,0))
-        console.log(x1,y1, "-", x2,y2, "-", closestPoint)
+      // console.log(x1,y1, "-", x2,y2, "-", closestPoint)
           if(closestdistance < r){
             this.linehelper(x1,y1,cx,cy, null, red)
             returnvalue = false;

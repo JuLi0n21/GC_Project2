@@ -30,6 +30,8 @@ let controllerGrip1, controllerGrip2;
 let obsticals, obsticalhitboxes ,vrControl;
 let positionBeforePress = new THREE.Vector3();
 
+let rrt;
+
 const clock = new THREE.Clock();
 
 init();
@@ -91,8 +93,8 @@ function init() {
   // Orbit controls for no-vr
 
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set(2, 2, 8);
-  controls.target = new THREE.Vector3(2,2,0);
+  camera.position.set(0, 5, 2);
+  controls.target = new THREE.Vector3(0,0,0);
 
   vrControl = VRControl(renderer);
 
@@ -129,7 +131,6 @@ function init() {
 
   //handle controller 2
   dolly.add(vrControl.controllerGrips[1], vrControl.controllers[1]);
-  //dolly.attach(vrControl.controllerGrips[1], vrControl.controllers[1]);
 
   //select button
   vrControl.controllers[1].addEventListener("select", (event) => {
@@ -183,43 +184,46 @@ function init() {
   obsticalhitboxes = new THREE.Group();
   obsticals = new THREE.Group();
 
-  const obst = new THREE.Mesh(new THREE.CircleGeometry(0.6, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
-  obst.position.set(2,0,2);
-  obst.rotateX(Math.PI/2)
+  const obst = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.2 ,32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst.position.set(2,0.1,2);
+  obst.updateMatrixWorld();
   obsticals.add(obst)
 
-  const obst2 = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
-  obst2.position.set(-2,0,-2);
-  obst2.rotateX(Math.PI/2)
+  const obst2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.9, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
+  obst2.position.set(-2, 0.45, -2);
+  obst2.updateMatrixWorld();
   obsticals.add(obst2)
-  const obst3 = new THREE.Mesh(new THREE.CircleGeometry(0.2, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
-  obst3.position.set(-2,0,2);
-  obst3.rotateX(Math.PI/2)
+ 
+  const obst3 = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 5, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.1 }))
+  obst3.position.set(-1.5,2.5,2);
+  obst3.updateMatrixWorld();
   obsticals.add(obst3)
 
-  const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide }))
-  box.position.set(3,3,-0.5);
-
-  obsticals.add(obst)
-  //obsticals.add(box)
+  const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.01 }))
+  box.position.set(0,1,0);
+  box.updateMatrixWorld();
+ // obsticals.add(obst)
+ // obsticals.add(box)
   
-  // scene.add(obsticals)
-  //obsticalhitboxes.copy(obsticals)
-  scene.add(obsticals)
+   scene.add(obsticals)
   algoGUI(scene, obsticals);
 
 
   let rrtcanvas = new THREE.Group;
 
-  const start = [1, 1];
-  const goal = [2, -2];
+  const start = [-1, 2, 3];
+  const goal = [-2, 2, 0];
   const maxStepSize = 0.2;
   const maxStepCount = 1000;
   const range = 6;
  
-  const rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
+   rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
-  //rrt.visulize();
+   rrt.findPath();
+  
+  // rrt.visualize();
+
+   rrt.addNodes(1000);
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
@@ -228,11 +232,11 @@ function init() {
 
   console.log("1")
   
- // rrtstar.findPath();
+  // rrtstar.findPath();
 
- // rrtstar.addNodes(100)
+ // rrtstar.addNodes(10)
   
- // rrtstar.visualize();
+  // rrtstar.visualize();
 
   scene.add(rrtcanvas);
  
@@ -399,19 +403,25 @@ function animate() {
   renderer.setAnimationLoop(render);
 }
 
+let time = 0;
 function render() {
-  const delta = clock.getDelta() * 60;
+
+  time += clock.getDelta();
   ThreeMeshUI.update();
   cleanIntersected();
   updateButtons(renderer, vrControl, 0);
- // updateButtons(renderer, vrControl, 1);
+  // updateButtons(renderer, vrControl, 1);
   intersectObjects(vrControl.controllers[0]);
   intersectObjects(vrControl.controllers[1]);
   handlecontrollers(vrControl.controllers[1]);
- // UpdateVrControl(vrControl.controllers[1])
- controls.update();
-  renderer.render(scene, camera);
- 
+  // UpdateVrControl(vrControl.controllers[1])
+  //rrt.addNodes(1)
 
   stats.update();
+  controls.update();
+  renderer.render(scene, camera);
+
+
+ // console.log(clock.getDelta())
+
 }
