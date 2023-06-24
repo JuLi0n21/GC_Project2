@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { throttle } from 'throttle-debounce';
 import Stats from "three/addons/libs/stats.module.js";
 import { BoxLineGeometry } from "three/addons/geometries/BoxLineGeometry.js";
 import { VRButton } from "three/addons/webxr/VRButton.js";
@@ -93,8 +94,8 @@ function init() {
   // Orbit controls for no-vr
 
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set(0, 5, 2);
-  controls.target = new THREE.Vector3(0,0,0);
+  camera.position.set(0, 5, 10);
+  controls.target = new THREE.Vector3(0,2.5,0);
 
   vrControl = VRControl(renderer);
 
@@ -219,11 +220,11 @@ function init() {
  
    rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
-   rrt.findPath();
+  // rrt.findPath();
   
   // rrt.visualize();
 
-   rrt.addNodes(1000);
+   //rrt.addNodes(1000);
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
@@ -398,6 +399,14 @@ function Objectplacementindicator(startingPoint, endPoint) {
 }
 
 
+const throttleFunc = throttle(
+	100,
+	(num) => {
+		rrt.addNodes(1)
+	},
+	{ noLeading: false, noTrailing: false }
+);
+
 
 function animate() {
   renderer.setAnimationLoop(render);
@@ -415,7 +424,8 @@ function render() {
   intersectObjects(vrControl.controllers[1]);
   handlecontrollers(vrControl.controllers[1]);
   // UpdateVrControl(vrControl.controllers[1])
-  //rrt.addNodes(1)
+  
+  throttleFunc();
 
   stats.update();
   controls.update();

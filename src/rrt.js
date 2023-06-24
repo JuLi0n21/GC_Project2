@@ -124,19 +124,22 @@ export class RRT {
   }
 
   addNodes(count) {
+
+    if(this.goalnode.parent == null) {
     for (let i = 0; i < count; i++) {
       const newNode = this.expand();
 
       if (newNode) {
 
-        if (newNode.distanceTo(this.goalnode) <= this.maxStepSize * 5) {
+        if (newNode.distanceTo(this.goalnode) <= this.maxStepSize * 2) {
           this.goalnode.parent = newNode;
          
         }
       }
     }
-    this.visualize()
+    this.visualize() 
     return false
+   }
   }
 
   findPath() {
@@ -148,7 +151,7 @@ export class RRT {
       const newNode = this.expand();
       if (newNode) {
         path.push(newNode);
-        console.log(this.goalnode.distanceTo(newNode))
+        //console.log(this.goalnode.distanceTo(newNode))
         if (newNode.distanceTo(this.goalnode) <= this.maxStepSize) {
           path.push(this.goal);
           foundGoal = true;
@@ -203,7 +206,7 @@ export class RRT {
 
   async visualize() {
 
-    
+    this.canvas.clear()
         //this.canvas.rotation.x = (Math.PI/2)
     //ADD A visulisation from the goal node to the root node
     //ALSO add line from last node to goal
@@ -260,7 +263,7 @@ export class RRT {
 
     this.drawGoalPath(this.goalnode);
 
-    console.log(this.tree)
+   // console.log(this.tree)
   }
 
   drawGoalPath(goalnode) {

@@ -120,7 +120,7 @@ export function algoGUI(scene, obsticals) {
      
         
 
-        if(id == 1) {
+        if(id == 0) {
             const start = [-1, 2, 3];
             const goal = [-2, 2, 0];
             const maxStepSize = 0.2;
@@ -136,7 +136,7 @@ export function algoGUI(scene, obsticals) {
             scene.add(rrtcanvas);
         }
 
-        if(id == 2) {
+        if(id == 1) {
             const start = [1, 1];
             const goal = [2, -2];
             const maxStepSize = 0.2;
@@ -218,14 +218,14 @@ export function algoGUI(scene, obsticals) {
         // Add text to buttons
     
         buttonNext.add(
-            new ThreeMeshUI.Text( { content: 'next' } )
+            new ThreeMeshUI.Text( { content: 'switch Algo' } )
         );  
         buttonPrevious.add(
             new ThreeMeshUI.Text( { content: 'addNodes' } )
         );   
 
         buttonRender.add(
-            new ThreeMeshUI.Text( { content: "render" } )
+            new ThreeMeshUI.Text( { content: "start" } )
         );
 
         // Create states for the buttons.
