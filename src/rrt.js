@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Tree, TreeNode } from "./tree";
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { flattenJSON } from "three/src/animation/AnimationUtils";
 
 export class RRT {
   constructor(start, goal, obstacles, maxStepSize, maxStepCount, range, canvas) {
@@ -86,28 +87,29 @@ export class RRT {
     const raycaster = new THREE.Raycaster()
 
     let origin = new THREE.Vector3(nearestNode.value[0], nearestNode.value[1], nearestNode.value[2]);
-   
-    let direction = new THREE.Vector3().lerpVectors(origin, new THREE.Vector3(node.value[0], node.value[1], node.value[2]),0.01)
-    //let direction =  new THREE.Vector3(node.value[0], node.value[1], node.value[2])
-   raycaster.set(direction, origin);
-   //raycaster.far = this.maxStepSize;
-    //console.log(raycaster.ray)
+    let helperdir = new THREE.Vector3(node.value[0], node.value[1], node.value[2]);
+    let direction = new THREE.Vector3();
+        direction.lerpVectors(origin, helperdir,1);
 
-   // this.linehelper(origin.x,origin.y,origin.z,direction.x,direction.y,direction.z, "facts", "red");
+    raycaster.set(direction, origin);
 
-//    console.log(this.obstacles.children)
     let intersectoins = raycaster.intersectObjects(this.obstacles.children, false);
-
       
-    if(intersectoins.length > 0){
-      //console.warn("intersetion", intersectoins)
+    if(intersectoins.length > 0 ) {
+      let shitmyself = new THREE.Vector3();
+        shitmyself.lerpVectors(origin, helperdir,intersectoins[0].distance);
+      this.linehelper(origin.x,origin.y,origin.z,shitmyself.x,shitmyself.y,shitmyself.z, "collision", "pink");
       returnvalue = false
-     // console.log(intersectoins[0])
-     // intersectoins[0].object.position.set(0,0,0)
+    } else if(intersectoins.length > 1) {
+      this.linehelper(origin.x,origin.y,origin.z,direction.x,direction.y,direction.z, "collision", "red");
+    } else {
+      this.linehelper(origin.x,origin.y,origin.z,direction.x,direction.y,direction.z, null, "green");
     }
+    
+    console.log(intersectoins)
 
     return returnvalue;
-  }
+}
   
 
   expand() {
@@ -163,6 +165,13 @@ export class RRT {
     return path;
   }
 
+  rewireall(){
+    //check if distance to any parent node in a certain range is shorter then the current one
+    //set the child of the cloest distance to the node being rewired.
+    // make sure there are no cycles created -> node muss im tree einzigarrtig sein
+    //bzw darf sich nicht selber als kind haben
+  }
+
   linehelper(x1,y1,z1,x2,y2,z2,text = null,Color = "#ffffff") {
     //console.log("drawin line")
     const points = [];
@@ -206,12 +215,8 @@ export class RRT {
 
   async visualize() {
 
+    //make it so only the last line is added to a single mesh instead of redrawing the entire tree
     this.canvas.clear()
-        //this.canvas.rotation.x = (Math.PI/2)
-    //ADD A visulisation from the goal node to the root node
-    //ALSO add line from last node to goal
-    //think about turning this into 3d
-    //make a RRT* (path optimization)
     if(this.path !== null) {
     //this.findPath();
     }

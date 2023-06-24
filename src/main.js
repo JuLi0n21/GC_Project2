@@ -195,16 +195,16 @@ function init() {
   obst2.updateMatrixWorld();
   obsticals.add(obst2)
  
-  const obst3 = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 5, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.1 }))
-  obst3.position.set(-1.5,2.5,2);
+  const obst3 = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 5, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 }))
+  obst3.position.set(-1.5,2.5,1);
   obst3.updateMatrixWorld();
   obsticals.add(obst3)
 
-  const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.01 }))
+  const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({ color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.5 }))
   box.position.set(0,1,0);
   box.updateMatrixWorld();
  // obsticals.add(obst)
- // obsticals.add(box)
+  //obsticals.add(box)
   
    scene.add(obsticals)
   algoGUI(scene, obsticals);
@@ -217,14 +217,14 @@ function init() {
   const maxStepSize = 0.2;
   const maxStepCount = 1000;
   const range = 6;
- 
+
    rrt = new RRT(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
   // rrt.findPath();
   
   // rrt.visualize();
 
-   //rrt.addNodes(1000);
+  // rrt.addNodes(1000);
 
   const rrtstar = new RRTStar(start, goal, obsticals, maxStepSize, maxStepCount, range, rrtcanvas);
 
@@ -425,7 +425,7 @@ function render() {
   handlecontrollers(vrControl.controllers[1]);
   // UpdateVrControl(vrControl.controllers[1])
   
-  throttleFunc();
+   throttleFunc();
 
   stats.update();
   controls.update();
